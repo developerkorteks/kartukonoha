@@ -1,3 +1,4 @@
+basePath: /
 definitions:
   main.APIResponse:
     properties:
@@ -410,8 +411,19 @@ definitions:
       status_code:
         type: integer
     type: object
+host: localhost:8080
 info:
-  contact: {}
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: API untuk pembelian paket XL dengan flow yang disederhanakan dan user-friendly
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Nadia Package Purchase API
+  version: "2.0"
 paths:
   /api/auth/login:
     post:
@@ -1162,4 +1174,13 @@ paths:
       summary: Get transaction detail
       tags:
       - dashboard
+schemes:
+- http
+- https
+securityDefinitions:
+  ApiKeyAuth:
+    description: 'API Key for authentication. Use: nadia-admin-2024-secure-key'
+    in: header
+    name: X-API-Key
+    type: apiKey
 swagger: "2.0"

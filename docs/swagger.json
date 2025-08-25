@@ -1,8 +1,26 @@
 {
+    "schemes": [
+        "http",
+        "https"
+    ],
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "API untuk pembelian paket XL dengan flow yang disederhanakan dan user-friendly",
+        "title": "Nadia Package Purchase API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "url": "http://www.swagger.io/support",
+            "email": "support@swagger.io"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "2.0"
     },
+    "host": "localhost:8080",
+    "basePath": "/",
     "paths": {
         "/api/auth/login": {
             "post": {
@@ -1773,6 +1791,14 @@
                     "type": "integer"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "description": "API Key for authentication. Use: nadia-admin-2024-secure-key",
+            "type": "apiKey",
+            "name": "X-API-Key",
+            "in": "header"
         }
     }
 }
