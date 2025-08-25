@@ -1,0 +1,649 @@
+basePath: /
+definitions:
+  main.APIResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      statusCode:
+        type: integer
+      success:
+        type: boolean
+    type: object
+  main.PackageSearchRequest:
+    properties:
+      max_price:
+        example: 10000
+        type: integer
+      min_price:
+        example: 1000
+        type: integer
+      payment_method:
+        example: BALANCE
+        type: string
+      query:
+        example: masa aktif
+        type: string
+    type: object
+  main.SimpleCheckStatusRequest:
+    properties:
+      otp_code:
+        example: "123456"
+        type: string
+      phone_number:
+        example: "087786388052"
+        type: string
+    required:
+    - otp_code
+    - phone_number
+    type: object
+  main.SimpleOTPRequest:
+    properties:
+      phone_number:
+        example: "087786388052"
+        type: string
+    required:
+    - phone_number
+    type: object
+  main.SimplePurchaseRequest:
+    properties:
+      access_token:
+        example: 1097690:ec321a89-6593-4b01-9a9e-383744301283
+        type: string
+      package_code:
+        example: XL_MASTIF_30D_P_V1
+        type: string
+      payment_method:
+        example: BALANCE
+        type: string
+      phone_number:
+        example: "087786388052"
+        type: string
+      source:
+        example: telegram_bot
+        type: string
+    required:
+    - access_token
+    - package_code
+    - payment_method
+    - phone_number
+    type: object
+  main.SimpleTransactionCheckRequest:
+    properties:
+      transaction_id:
+        example: a1e3b046-3dda-4eb5-93c2-f0eb01a1a453
+        type: string
+    required:
+    - transaction_id
+    type: object
+  main.SimpleVerifyOTPRequest:
+    properties:
+      otp_code:
+        example: "123456"
+        type: string
+      phone_number:
+        example: "087786388052"
+        type: string
+    required:
+    - otp_code
+    - phone_number
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: API untuk pembelian paket XL dengan flow yang disederhanakan dan user-friendly
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Nadia Package Purchase API
+  version: "2.0"
+paths:
+  /api/balance:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve current account balance
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Get account balance
+      tags:
+      - wallet
+  /api/card/packages:
+    post:
+      consumes:
+      - application/json
+      description: Check all active packages/quotas on an XL card using OTP verification
+      parameters:
+      - description: Check active packages request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.SimpleCheckStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Check active packages on XL card
+      tags:
+      - card
+  /api/card/status:
+    post:
+      consumes:
+      - application/json
+      description: Check the status, balance, and active period of an XL card using
+        OTP verification
+      parameters:
+      - description: Check status request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.SimpleCheckStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Check XL card status and balance
+      tags:
+      - card
+  /api/dashboard:
+    get:
+      consumes:
+      - application/json
+      description: Get comprehensive dashboard data including stats, recent transactions,
+        and balance
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Get dashboard data
+      tags:
+      - dashboard
+  /api/export/transactions:
+    get:
+      consumes:
+      - application/json
+      description: Export transaction data to CSV format with optional filtering
+      parameters:
+      - description: Filter by status (SUCCESS, FAILED, PENDING)
+        in: query
+        name: status
+        type: string
+      - description: Filter by source (telegram_bot, whatsapp_bot, etc.)
+        in: query
+        name: source
+        type: string
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: to
+        type: string
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: CSV data
+          schema:
+            type: string
+      summary: Export transactions to CSV
+      tags:
+      - dashboard
+  /api/health:
+    get:
+      consumes:
+      - application/json
+      description: Check if the API is running properly
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Health check
+      tags:
+      - system
+  /api/invoice/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get comprehensive invoice statistics including payment rates and
+        revenue
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Get invoice statistics
+      tags:
+      - invoice
+  /api/invoices:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve list of invoices with pagination
+      parameters:
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - default: 20
+        description: Limit per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Get invoice list
+      tags:
+      - invoice
+  /api/invoices/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific invoice
+      parameters:
+      - description: Invoice ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Get invoice detail
+      tags:
+      - invoice
+  /api/otp/request:
+    post:
+      consumes:
+      - application/json
+      description: Request OTP code to be sent to the specified phone number. The
+        OTP will be stored in session for 5 minutes.
+      parameters:
+      - description: OTP request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.SimpleOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Request OTP for phone number
+      tags:
+      - otp
+  /api/otp/verify:
+    post:
+      consumes:
+      - application/json
+      description: Verify OTP code and get access token for purchasing packages
+      parameters:
+      - description: Verify OTP request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.SimpleVerifyOTPRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Verify OTP and get access token
+      tags:
+      - otp
+  /api/packages:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all available packages from Nadia API without filtering
+      parameters:
+      - default: 100
+        description: Limit number of packages returned
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Get all available packages
+      tags:
+      - packages
+  /api/packages/search:
+    post:
+      consumes:
+      - application/json
+      description: Search and filter packages by name, price, payment method, etc.
+      parameters:
+      - description: Search filters
+        in: body
+        name: search
+        required: true
+        schema:
+          $ref: '#/definitions/main.PackageSearchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Search packages with filters
+      tags:
+      - packages
+  /api/packages/stock:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve stock information for all packages
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Get package stock information
+      tags:
+      - packages
+  /api/payment-methods:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all available payment methods
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Get available payment methods
+      tags:
+      - payment
+  /api/purchase:
+    post:
+      consumes:
+      - application/json
+      description: Purchase a package using phone number, package code, payment method,
+        and access token
+      parameters:
+      - description: Purchase request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.SimplePurchaseRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Purchase a package with access token
+      tags:
+      - purchase
+  /api/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get comprehensive system statistics including transaction counts,
+        revenue, and success rates
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Get system statistics
+      tags:
+      - dashboard
+  /api/stats/daily:
+    get:
+      consumes:
+      - application/json
+      description: Get transaction statistics grouped by day for the last 30 days
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Get daily statistics
+      tags:
+      - dashboard
+  /api/stats/hourly:
+    get:
+      consumes:
+      - application/json
+      description: Get transaction statistics grouped by hour for the last 24 hours
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Get hourly statistics
+      tags:
+      - dashboard
+  /api/transaction/check:
+    post:
+      consumes:
+      - application/json
+      description: Check the status of a transaction by transaction ID
+      parameters:
+      - description: Transaction check request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.SimpleTransactionCheckRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Check transaction status
+      tags:
+      - transaction
+  /api/transactions:
+    get:
+      consumes:
+      - application/json
+      description: Get paginated transaction history with optional filtering
+      parameters:
+      - default: 50
+        description: Limit number of transactions
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset for pagination
+        in: query
+        name: offset
+        type: integer
+      - description: Filter by status (SUCCESS, FAILED, PENDING)
+        in: query
+        name: status
+        type: string
+      - description: Filter by source (telegram_bot, whatsapp_bot, etc.)
+        in: query
+        name: source
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Get transaction history
+      tags:
+      - dashboard
+  /api/transactions/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific transaction
+      parameters:
+      - description: Transaction ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Get transaction detail
+      tags:
+      - dashboard
+schemes:
+- http
+- https
+swagger: "2.0"

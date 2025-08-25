@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nadia API Enhanced Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            margin-left: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .status-operational {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .status-degraded {
+            background: #FF9800;
+            color: white;
+        }
+        
+        .nav-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 12px 25px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+        }
+        
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+        
+        .success { color: #4CAF50 !important; }
+        .warning { color: #FF9800 !important; }
+        .error { color: #f44336 !important; }
+        .info { color: #2196F3 !important; }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+        
+        .card h3 {
+            margin-bottom: 25px;
+            color: #333;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .balance-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .balance-item {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+        
+        .balance-amount {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2196F3;
+            margin-bottom: 5px;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 350px;
+            margin-top: 20px;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 15px 12px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .data-table th {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-paid, .status-success {
+            background: #e8f5e8;
+            color: #4CAF50;
+        }
+        
+        .status-unpaid, .status-failed {
+            background: #ffebee;
+            color: #f44336;
+        }
+        
+        .status-pending {
+            background: #fff3e0;
+            color: #FF9800;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 0.9rem;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .btn-primary { background: #2196F3; }
+        .btn-warning { background: #FF9800; }
+        .btn-info { background: #17a2b8; }
+        .btn-secondary { background: #6c757d; }
+        
+        .filters-panel {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            align-items: end;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-group label {
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+        
+        .filter-group select,
+        .filter-group input {
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .filter-group select:focus,
+        .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #f44336;
+        }
+        
+        .success-message {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 15px;
+            padding: 5px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .tab.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .stats-overview {
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Nadia API Enhanced Dashboard</h1>
+            <p>Comprehensive monitoring & analytics for transactions and invoices</p>
+            <span id="systemStatus" class="status-indicator">Loading...</span>
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="refreshDashboard()">🔄 Refresh</button>
+                <a href="/api-flow" class="nav-btn">🔄 API Flow</a>
+                <a href="/swagger/index.html" class="nav-btn">📚 Swagger</a>
+                <button class="nav-btn" onclick="toggleAutoRefresh()">⏱️ Auto Refresh: <span id="autoRefreshStatus">ON</span></button>
+            </div>
+        </div>
+        
+        <!-- Statistics Overview -->
+        <div class="stats-overview" id="statsOverview">
+            <div class="loading">Loading statistics...</div>
+        </div>
+        
+        <!-- Main Dashboard Grid -->
+        <div class="dashboard-grid">
+            <div class="card">
+                <h3>💰 Balance Information</h3>
+                <div id="balanceInfo" class="loading">Loading balance...</div>
+            </div>
+            
+            <div class="card">
+                <h3>📊 Source Breakdown</h3>
+                <div class="chart-container">
+                    <canvas id="sourceChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tabs for different views -->
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('transactions')">📋 Recent Transactions</div>
+            <div class="tab" onclick="switchTab('invoices')">🧾 Recent Invoices</div>
+            <div class="tab" onclick="switchTab('analytics')">📈 Analytics</div>
+        </div>
+        
+        <!-- Transactions Tab -->
+        <div id="transactions-tab" class="tab-content active">
+            <div class="card">
+                <h3>📋 Recent Transactions</h3>
+                <div class="action-buttons">
+                    <button class="btn" onclick="exportTransactions()">📥 Export CSV</button>
+                    <button class="btn btn-primary" onclick="toggleTransactionFilters()">🔍 Filter</button>
+                    <button class="btn btn-info" onclick="refreshTransactions()">🔄 Refresh</button>
+                </div>
+                <div id="transactionFilters" class="filters-panel" style="display: none;">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label>Status</label>
+                            <select id="statusFilter">
+                                <option value="">All Status</option>
+                                <option value="SUCCESS">Success</option>
+                                <option value="FAILED">Failed</option>
+                                <option value="PENDING">Pending</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Source</label>
+                            <select id="sourceFilter">
+                                <option value="">All Sources</option>
+                                <option value="telegram_bot">Telegram Bot</option>
+                                <option value="whatsapp_bot">WhatsApp Bot</option>
+                                <option value="api_direct">API Direct</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>From Date</label>
+                            <input type="date" id="fromDate">
+                        </div>
+                        <div class="filter-group">
+                            <label>To Date</label>
+                            <input type="date" id="toDate">
+                        </div>
+                        <div class="filter-group">
+                            <label>&nbsp;</label>
+                            <button class="btn btn-primary" onclick="applyTransactionFilters()">Apply Filters</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <div id="transactionsTable" class="loading">Loading transactions...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Invoices Tab -->
+        <div id="invoices-tab" class="tab-content">
+            <div class="card">
+                <h3>🧾 Invoice Management</h3>
+                <div class="action-buttons">
+                    <button class="btn" onclick="exportInvoices()">📥 Export CSV</button>
+                    <button class="btn btn-primary" onclick="toggleInvoiceFilters()">🔍 Filter</button>
+                    <button class="btn btn-info" onclick="refreshInvoices()">🔄 Refresh</button>
+                    <button class="btn btn-warning" onclick="showInvoiceStats()">📊 Statistics</button>
+                </div>
+                <div id="invoiceFilters" class="filters-panel" style="display: none;">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label>Status</label>
+                            <select id="invoiceStatusFilter">
+                                <option value="">All Status</option>
+                                <option value="paid">Paid</option>
+                                <option value="unpaid">Unpaid</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Search</label>
+                            <input type="text" id="invoiceSearchFilter" placeholder="Search invoices...">
+                        </div>
+                        <div class="filter-group">
+                            <label>From Date</label>
+                            <input type="date" id="invoiceFromDate">
+                        </div>
+                        <div class="filter-group">
+                            <label>To Date</label>
+                            <input type="date" id="invoiceToDate">
+                        </div>
+                        <div class="filter-group">
+                            <label>&nbsp;</label>
+                            <button class="btn btn-primary" onclick="applyInvoiceFilters()">Apply Filters</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <div id="invoicesTable" class="loading">Loading invoices...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Analytics Tab -->
+        <div id="analytics-tab" class="tab-content">
+            <div class="dashboard-grid">
+                <div class="card">
+                    <h3>📈 Transaction Analytics</h3>
+                    <div class="chart-container">
+                        <canvas id="transactionChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>💳 Invoice Analytics</h3>
+                    <div class="chart-container">
+                        <canvas id="invoiceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>📊 Performance Metrics</h3>
+                <div id="performanceMetrics" class="loading">Loading metrics...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let sourceChart = null;
+        let transactionChart = null;
+        let invoiceChart = null;
+        let autoRefresh = true;
+        let refreshInterval = null;
+        
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Add active class to selected tab
+            event.target.classList.add('active');
+            
+            // Load data for the selected tab
+            if (tabName === 'invoices') {
+                refreshInvoices();
+            } else if (tabName === 'analytics') {
+                loadAnalytics();
+            }
+        }
+        
+        // Dashboard data fetching
+        async function fetchDashboardData() {
+            try {
+                const response = await fetch('/api/dashboard');
+                const data = await response.json();
+                
+                if (data.success) {
+                    return data.data;
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('Error fetching dashboard data:', error);
+                return null;
+            }
+        }
+        
+        // Update system status
+        function updateSystemStatus(status) {
+            const statusElement = document.getElementById('systemStatus');
+            statusElement.textContent = status;
+            statusElement.className = 'status-indicator ' + 
+                (status === 'OPERATIONAL' ? 'status-operational' : 'status-degraded');
+        }
+        
+        // Update statistics overview
+        function updateStatsOverview(stats, invoiceStats) {
+            const statsOverview = document.getElementById('statsOverview');
+            
+            // Handle null or undefined stats
+            if (!stats) stats = {};
+            if (!invoiceStats) invoiceStats = {};
+            
+            const successRate = stats.success_rate || 0;
+            const paymentRate = invoiceStats.payment_rate || 0;
+            
+            statsOverview.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number info">${stats.total_transactions || 0}</div>
+                    <div class="stat-label">Total Transactions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number success">${stats.successful_transactions || 0}</div>
+                    <div class="stat-label">Successful Transactions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number ${successRate >= 90 ? 'success' : successRate >= 70 ? 'warning' : 'error'}">
+                        ${successRate.toFixed(1)}%
+                    </div>
+                    <div class="stat-label">Transaction Success Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number info">${invoiceStats.total_invoices || 0}</div>
+                    <div class="stat-label">Total Invoices</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number success">${invoiceStats.paid_invoices || 0}</div>
+                    <div class="stat-label">Paid Invoices</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number ${paymentRate >= 90 ? 'success' : paymentRate >= 70 ? 'warning' : 'error'}">
+                        ${paymentRate.toFixed(1)}%
+                    </div>
+                    <div class="stat-label">Invoice Payment Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number info">Rp ${(stats.total_revenue || 0).toLocaleString()}</div>
+                    <div class="stat-label">Transaction Revenue</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number info">Rp ${(invoiceStats.total_revenue || 0).toLocaleString()}</div>
+                    <div class="stat-label">Invoice Revenue</div>
+                </div>
+            `;
+        }
+        
+        // Update balance information
+        function updateBalance(balance) {
+            const balanceInfo = document.getElementById('balanceInfo');
+            
+            if (!balance || !balance.data) {
+                balanceInfo.innerHTML = '<div class="error-message">Balance information unavailable</div>';
+                return;
+            }
+            
+            const balanceData = balance.data;
+            balanceInfo.innerHTML = `
+                <div class="balance-info">
+                    <div class="balance-item">
+                        <div class="balance-amount">Rp ${(balanceData.balance || 0).toLocaleString()}</div>
+                        <div>Main Balance</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-amount">Rp ${(balanceData.bonus_balance || 0).toLocaleString()}</div>
+                        <div>Bonus Balance</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-amount">Rp ${(balanceData.total_balance || 0).toLocaleString()}</div>
+                        <div>Total Balance</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Update source chart
+        function updateSourceChart(sourceBreakdown) {
+            const ctx = document.getElementById('sourceChart').getContext('2d');
+            
+            if (sourceChart) {
+                sourceChart.destroy();
+            }
+            
+            // Handle null or empty data
+            if (!sourceBreakdown || sourceBreakdown.length === 0) {
+                sourceBreakdown = [{source: 'No Data', count: 1}];
+            }
+            
+            const labels = sourceBreakdown.map(item => item.source || 'Unknown');
+            const data = sourceBreakdown.map(item => item.count || 0);
+            const colors = [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+                '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+            ];
+            
+            sourceChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 3,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update transactions table
+        function updateTransactions(transactions) {
+            const transactionsTable = document.getElementById('transactionsTable');
+            
+            if (!transactions || transactions.length === 0) {
+                transactionsTable.innerHTML = '<div class="error-message">No transactions found</div>';
+                return;
+            }
+            
+            let tableHTML = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Phone</th>
+                            <th>Package</th>
+                            <th>Source</th>
+                            <th>Status</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            transactions.forEach(tx => {
+                const date = new Date(tx.created_at);
+                const statusClass = tx.status.toLowerCase();
+                
+                tableHTML += `
+                    <tr>
+                        <td>${date.toLocaleString()}</td>
+                        <td>${tx.phone_number}</td>
+                        <td title="${tx.package_name}">${tx.package_code}</td>
+                        <td>${tx.source || 'Unknown'}</td>
+                        <td><span class="status-badge status-${statusClass}">${tx.status}</span></td>
+                        <td>Rp ${(tx.amount || 0).toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += '</tbody></table>';
+            transactionsTable.innerHTML = tableHTML;
+        }
+        
+        // Update invoices table
+        function updateInvoices(invoices) {
+            const invoicesTable = document.getElementById('invoicesTable');
+            
+            if (!invoices || invoices.length === 0) {
+                invoicesTable.innerHTML = '<div class="error-message">No invoices found</div>';
+                return;
+            }
+            
+            let tableHTML = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Invoice ID</th>
+                            <th>Title</th>
+                            <th>Customer</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Due Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            invoices.forEach(invoice => {
+                const createdDate = new Date(parseInt(invoice.created_at));
+                const dueDate = new Date(parseInt(invoice.due_date));
+                const statusClass = invoice.invoice_status_id.toLowerCase();
+                
+                tableHTML += `
+                    <tr>
+                        <td><strong>${invoice.invoice_id}</strong></td>
+                        <td>${invoice.title}</td>
+                        <td>
+                            <div>${invoice.fullname}</div>
+                            <small style="color: #666;">${invoice.email}</small>
+                        </td>
+                        <td><strong>Rp ${invoice.amount.toLocaleString()}</strong></td>
+                        <td><span class="status-badge status-${statusClass}">${invoice.invoice_status_id}</span></td>
+                        <td>${createdDate.toLocaleDateString()}</td>
+                        <td>${dueDate.toLocaleDateString()}</td>
+                        <td>
+                            <button class="btn btn-info" onclick="viewInvoiceDetail('${invoice.id}')" style="padding: 5px 10px; font-size: 0.8rem;">View</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += '</tbody></table>';
+            invoicesTable.innerHTML = tableHTML;
+        }
+        
+        // Refresh functions
+        async function refreshDashboard() {
+            const data = await fetchDashboardData();
+            
+            if (data) {
+                updateSystemStatus(data.system_status);
+                updateStatsOverview(data.stats, data.invoice_stats);
+                updateBalance(data.balance);
+                updateSourceChart(data.source_breakdown);
+                updateTransactions(data.recent_transactions);
+            } else {
+                updateSystemStatus('DEGRADED');
+            }
+        }
+        
+        async function refreshTransactions() {
+            try {
+                const response = await fetch('/api/transactions?limit=50');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateTransactions(data.data.transactions);
+                }
+            } catch (error) {
+                console.error('Error refreshing transactions:', error);
+            }
+        }
+        
+        async function refreshInvoices() {
+            try {
+                const response = await fetch('/api/invoices?limit=50');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateInvoices(data.data);
+                }
+            } catch (error) {
+                console.error('Error refreshing invoices:', error);
+            }
+        }
+        
+        // Filter functions
+        function toggleTransactionFilters() {
+            const filters = document.getElementById('transactionFilters');
+            filters.style.display = filters.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function toggleInvoiceFilters() {
+            const filters = document.getElementById('invoiceFilters');
+            filters.style.display = filters.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        async function applyTransactionFilters() {
+            const status = document.getElementById('statusFilter').value;
+            const source = document.getElementById('sourceFilter').value;
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+            
+            let url = '/api/transactions?limit=100';
+            if (status) url += `&status=${status}`;
+            if (source) url += `&source=${source}`;
+            if (fromDate) url += `&from=${fromDate}`;
+            if (toDate) url += `&to=${toDate}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateTransactions(data.data.transactions);
+                }
+            } catch (error) {
+                console.error('Error applying transaction filters:', error);
+            }
+        }
+        
+        async function applyInvoiceFilters() {
+            const status = document.getElementById('invoiceStatusFilter').value;
+            const search = document.getElementById('invoiceSearchFilter').value;
+            
+            let url = '/api/invoices?limit=100';
+            if (search) url += `&search=${encodeURIComponent(search)}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success) {
+                    let filteredInvoices = data.data;
+                    
+                    // Apply status filter on client side
+                    if (status) {
+                        filteredInvoices = filteredInvoices.filter(invoice => 
+                            invoice.invoice_status_id === status
+                        );
+                    }
+                    
+                    updateInvoices(filteredInvoices);
+                }
+            } catch (error) {
+                console.error('Error applying invoice filters:', error);
+            }
+        }
+        
+        // Export functions
+        function exportTransactions() {
+            const status = document.getElementById('statusFilter').value;
+            const source = document.getElementById('sourceFilter').value;
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+            
+            let url = '/api/export/transactions?';
+            const params = [];
+            if (status) params.push(`status=${status}`);
+            if (source) params.push(`source=${source}`);
+            if (fromDate) params.push(`from=${fromDate}`);
+            if (toDate) params.push(`to=${toDate}`);
+            
+            url += params.join('&');
+            window.open(url, '_blank');
+        }
+        
+        function exportInvoices() {
+            const status = document.getElementById('invoiceStatusFilter').value;
+            const search = document.getElementById('invoiceSearchFilter').value;
+            const fromDate = document.getElementById('invoiceFromDate').value;
+            const toDate = document.getElementById('invoiceToDate').value;
+            
+            let url = '/api/export/invoices?';
+            const params = [];
+            if (status) params.push(`status=${status}`);
+            if (search) params.push(`search=${encodeURIComponent(search)}`);
+            if (fromDate) params.push(`from=${fromDate}`);
+            if (toDate) params.push(`to=${toDate}`);
+            
+            url += params.join('&');
+            window.open(url, '_blank');
+        }
+        
+        // Analytics functions
+        async function loadAnalytics() {
+            // Load transaction analytics
+            try {
+                const response = await fetch('/api/stats/daily');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateTransactionChart(data.data);
+                }
+            } catch (error) {
+                console.error('Error loading transaction analytics:', error);
+            }
+            
+            // Load invoice analytics
+            try {
+                const response = await fetch('/api/invoice/stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateInvoiceChart(data.data.stats);
+                }
+            } catch (error) {
+                console.error('Error loading invoice analytics:', error);
+            }
+        }
+        
+        function updateTransactionChart(dailyStats) {
+            const ctx = document.getElementById('transactionChart').getContext('2d');
+            
+            if (transactionChart) {
+                transactionChart.destroy();
+            }
+            
+            const dates = Object.keys(dailyStats).sort();
+            const successData = dates.map(date => dailyStats[date].SUCCESS || 0);
+            const failedData = dates.map(date => dailyStats[date].FAILED || 0);
+            
+            transactionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Successful',
+                        data: successData,
+                        borderColor: '#4CAF50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Failed',
+                        data: failedData,
+                        borderColor: '#f44336',
+                        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateInvoiceChart(invoiceStats) {
+            const ctx = document.getElementById('invoiceChart').getContext('2d');
+            
+            if (invoiceChart) {
+                invoiceChart.destroy();
+            }
+            
+            invoiceChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Paid', 'Unpaid', 'Pending'],
+                    datasets: [{
+                        data: [
+                            invoiceStats.paid_invoices,
+                            invoiceStats.unpaid_invoices,
+                            invoiceStats.pending_invoices
+                        ],
+                        backgroundColor: ['#4CAF50', '#f44336', '#FF9800'],
+                        borderWidth: 3,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Auto refresh functionality
+        function toggleAutoRefresh() {
+            autoRefresh = !autoRefresh;
+            const statusElement = document.getElementById('autoRefreshStatus');
+            statusElement.textContent = autoRefresh ? 'ON' : 'OFF';
+            
+            if (autoRefresh) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        }
+        
+        function startAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+            refreshInterval = setInterval(refreshDashboard, 30000); // 30 seconds
+        }
+        
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        }
+        
+        // Invoice detail view
+        async function viewInvoiceDetail(invoiceId) {
+            try {
+                const response = await fetch(`/api/invoices/${invoiceId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const invoice = data.data;
+                    alert(`Invoice Details:\n\nID: ${invoice.invoice_id}\nTitle: ${invoice.title}\nAmount: Rp ${invoice.amount.toLocaleString()}\nStatus: ${invoice.invoice_status_id}\nCustomer: ${invoice.fullname} (${invoice.email})`);
+                } else {
+                    alert('Failed to load invoice details');
+                }
+            } catch (error) {
+                console.error('Error loading invoice detail:', error);
+                alert('Error loading invoice details');
+            }
+        }
+        
+        // Show invoice statistics
+        async function showInvoiceStats() {
+            try {
+                const response = await fetch('/api/invoice/stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const stats = data.data.stats;
+                    alert(`Invoice Statistics:\n\nTotal Invoices: ${stats.total_invoices}\nPaid: ${stats.paid_invoices}\nUnpaid: ${stats.unpaid_invoices}\nPending: ${stats.pending_invoices}\nPayment Rate: ${stats.payment_rate.toFixed(1)}%\nTotal Revenue: Rp ${stats.total_revenue.toLocaleString()}`);
+                }
+            } catch (error) {
+                console.error('Error loading invoice stats:', error);
+            }
+        }
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshDashboard();
+            startAutoRefresh();
+        });
+    </script>
+</body>
+</html>

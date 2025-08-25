@@ -1,0 +1,11 @@
+{
+  "statusCode": 200,
+  "message": "Success fetching payment methods",
+  "data": [
+    {
+      "id": "duitku",
+      "label": "Duitku",
+      "image_url": "/images/payments/logo-duitku.png"
+    }
+  ]
+}

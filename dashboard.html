@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nadia API Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .status-operational {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .status-degraded {
+            background: #FF9800;
+            color: white;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 1rem;
+        }
+        
+        .success { color: #4CAF50; }
+        .warning { color: #FF9800; }
+        .error { color: #f44336; }
+        .info { color: #2196F3; }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .card h3 {
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .balance-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .balance-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .balance-amount {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2196F3;
+        }
+        
+        .transactions-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .transactions-table th,
+        .transactions-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .transactions-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .status-success {
+            background: #e8f5e8;
+            color: #4CAF50;
+        }
+        
+        .status-failed {
+            background: #ffebee;
+            color: #f44336;
+        }
+        
+        .status-pending {
+            background: #fff3e0;
+            color: #FF9800;
+        }
+        
+        .refresh-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s ease;
+        }
+        
+        .refresh-btn:hover {
+            background: #45a049;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Nadia API Dashboard</h1>
+            <p>Real-time monitoring & analytics</p>
+            <span id="systemStatus" class="status-indicator">Loading...</span>
+            <div style="margin-top: 15px;">
+                <button class="refresh-btn" onclick="refreshDashboard()">🔄 Refresh</button>
+                <a href="/api-flow" class="refresh-btn" style="text-decoration: none; display: inline-block; background: #2196F3;">🔄 API Flow</a>
+                <a href="/swagger/index.html" class="refresh-btn" style="text-decoration: none; display: inline-block; background: #FF9800;">📚 Swagger</a>
+            </div>
+        </div>
+        
+        <div class="stats-grid" id="statsGrid">
+            <div class="loading">Loading statistics...</div>
+        </div>
+        
+        <div class="dashboard-grid">
+            <div class="card">
+                <h3>💰 Balance Information</h3>
+                <div id="balanceInfo" class="loading">Loading balance...</div>
+            </div>
+            
+            <div class="card">
+                <h3>📊 Source Breakdown</h3>
+                <div class="chart-container">
+                    <canvas id="sourceChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>📋 Recent Transactions</h3>
+            <div style="margin-bottom: 15px;">
+                <button class="refresh-btn" onclick="exportTransactions()">📥 Export CSV</button>
+                <button class="refresh-btn" onclick="showTransactionFilters()" style="background: #2196F3;">🔍 Filter</button>
+            </div>
+            <div id="transactionFilters" style="display: none; margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                    <select id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="SUCCESS">Success</option>
+                        <option value="FAILED">Failed</option>
+                        <option value="PENDING">Pending</option>
+                    </select>
+                    <select id="sourceFilter">
+                        <option value="">All Sources</option>
+                        <option value="telegram_bot">Telegram Bot</option>
+                        <option value="whatsapp_bot">WhatsApp Bot</option>
+                        <option value="api_direct">API Direct</option>
+                    </select>
+                    <input type="date" id="fromDate" placeholder="From Date">
+                    <input type="date" id="toDate" placeholder="To Date">
+                    <button class="refresh-btn" onclick="applyFilters()">Apply</button>
+                </div>
+            </div>
+            <div id="transactionsTable" class="loading">Loading transactions...</div>
+        </div>
+    </div>
+
+    <script>
+        let sourceChart = null;
+        
+        async function fetchDashboardData() {
+            try {
+                const response = await fetch('/api/dashboard');
+                const data = await response.json();
+                
+                if (data.success) {
+                    return data.data;
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('Error fetching dashboard data:', error);
+                return null;
+            }
+        }
+        
+        function updateSystemStatus(status) {
+            const statusElement = document.getElementById('systemStatus');
+            statusElement.textContent = status;
+            statusElement.className = 'status-indicator ' + 
+                (status === 'OPERATIONAL' ? 'status-operational' : 'status-degraded');
+        }
+        
+        function updateStats(stats) {
+            const statsGrid = document.getElementById('statsGrid');
+            const successRate = stats.success_rate || 0;
+            
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number info">${stats.total_transactions}</div>
+                    <div class="stat-label">Total Transactions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number success">${stats.successful_transactions}</div>
+                    <div class="stat-label">Successful</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number error">${stats.failed_transactions}</div>
+                    <div class="stat-label">Failed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number ${successRate >= 90 ? 'success' : successRate >= 70 ? 'warning' : 'error'}">
+                        ${successRate.toFixed(1)}%
+                    </div>
+                    <div class="stat-label">Success Rate</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number info">Rp ${stats.total_revenue.toLocaleString()}</div>
+                    <div class="stat-label">Total Revenue</div>
+                </div>
+            `;
+        }
+        
+        function updateBalance(balance) {
+            const balanceInfo = document.getElementById('balanceInfo');
+            
+            if (!balance || !balance.data) {
+                balanceInfo.innerHTML = '<div class="error">Balance information unavailable</div>';
+                return;
+            }
+            
+            const balanceData = balance.data;
+            balanceInfo.innerHTML = `
+                <div class="balance-info">
+                    <div class="balance-item">
+                        <div class="balance-amount">Rp ${(balanceData.balance || 0).toLocaleString()}</div>
+                        <div>Main Balance</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-amount">Rp ${(balanceData.bonus_balance || 0).toLocaleString()}</div>
+                        <div>Bonus Balance</div>
+                    </div>
+                    <div class="balance-item">
+                        <div class="balance-amount">Rp ${(balanceData.total_balance || 0).toLocaleString()}</div>
+                        <div>Total Balance</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function updateSourceChart(sourceBreakdown) {
+            const ctx = document.getElementById('sourceChart').getContext('2d');
+            
+            if (sourceChart) {
+                sourceChart.destroy();
+            }
+            
+            const labels = sourceBreakdown.map(item => item.source || 'Unknown');
+            const data = sourceBreakdown.map(item => item.count);
+            const colors = [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+                '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+            ];
+            
+            sourceChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateTransactions(transactions) {
+            const transactionsTable = document.getElementById('transactionsTable');
+            
+            if (!transactions || transactions.length === 0) {
+                transactionsTable.innerHTML = '<div class="info">No transactions found</div>';
+                return;
+            }
+            
+            let tableHTML = `
+                <table class="transactions-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Phone</th>
+                            <th>Package</th>
+                            <th>Source</th>
+                            <th>Status</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            transactions.forEach(tx => {
+                const date = new Date(tx.created_at);
+                const statusClass = tx.status.toLowerCase();
+                
+                tableHTML += `
+                    <tr>
+                        <td>${date.toLocaleString()}</td>
+                        <td>${tx.phone_number}</td>
+                        <td title="${tx.package_name}">${tx.package_code}</td>
+                        <td>${tx.source || 'Unknown'}</td>
+                        <td><span class="status-badge status-${statusClass}">${tx.status}</span></td>
+                        <td>Rp ${(tx.amount || 0).toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += '</tbody></table>';
+            transactionsTable.innerHTML = tableHTML;
+        }
+        
+        async function refreshDashboard() {
+            const data = await fetchDashboardData();
+            
+            if (data) {
+                updateSystemStatus(data.system_status);
+                updateStats(data.stats);
+                updateBalance(data.balance);
+                updateSourceChart(data.source_breakdown);
+                updateTransactions(data.recent_transactions);
+            } else {
+                updateSystemStatus('DEGRADED');
+            }
+        }
+        
+        // Initial load
+        refreshDashboard();
+        
+        // Auto refresh every 30 seconds
+        setInterval(refreshDashboard, 30000);
+        
+        function showTransactionFilters() {
+            const filters = document.getElementById('transactionFilters');
+            filters.style.display = filters.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        async function applyFilters() {
+            const status = document.getElementById('statusFilter').value;
+            const source = document.getElementById('sourceFilter').value;
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+            
+            let url = '/api/transactions?limit=50';
+            if (status) url += `&status=${status}`;
+            if (source) url += `&source=${source}`;
+            if (fromDate) url += `&from=${fromDate}`;
+            if (toDate) url += `&to=${toDate}`;
+            
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateTransactions(data.data.transactions);
+                }
+            } catch (error) {
+                console.error('Error applying filters:', error);
+            }
+        }
+        
+        function exportTransactions() {
+            const status = document.getElementById('statusFilter').value;
+            const source = document.getElementById('sourceFilter').value;
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+            
+            let url = '/api/export/transactions?';
+            const params = [];
+            if (status) params.push(`status=${status}`);
+            if (source) params.push(`source=${source}`);
+            if (fromDate) params.push(`from=${fromDate}`);
+            if (toDate) params.push(`to=${toDate}`);
+            
+            url += params.join('&');
+            window.open(url, '_blank');
+        }
+    </script>
+</body>
+</html>

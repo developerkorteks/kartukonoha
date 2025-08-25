@@ -1,0 +1,8 @@
+{
+  "statusCode": 200,
+  "message": "Successfully get balance for this username",
+  "success": true,
+  "data": {
+    "balance": "0.00"
+  }
+}
