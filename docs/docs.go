@@ -44,7 +44,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.AuthRequest"
+                            "$ref": "#/definitions/models.AuthRequest"
                         }
                     }
                 ],
@@ -54,13 +54,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/main.APIResponse"
+                                    "$ref": "#/definitions/models.APIResponse"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/main.AuthResponse"
+                                            "$ref": "#/definitions/models.AuthResponse"
                                         }
                                     }
                                 }
@@ -70,13 +70,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -84,6 +84,14 @@ const docTemplate = `{
         },
         "/api/balance": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Retrieve current account balance",
                 "consumes": [
                     "application/json"
@@ -99,13 +107,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -113,6 +121,14 @@ const docTemplate = `{
         },
         "/api/card/packages": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Check all active packages/quotas on an XL card using OTP verification",
                 "consumes": [
                     "application/json"
@@ -131,7 +147,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.SimpleCheckStatusRequest"
+                            "$ref": "#/definitions/models.SimpleCheckStatusRequest"
                         }
                     }
                 ],
@@ -139,19 +155,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -159,6 +175,14 @@ const docTemplate = `{
         },
         "/api/card/status": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Check the status, balance, and active period of an XL card using OTP verification",
                 "consumes": [
                     "application/json"
@@ -177,7 +201,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.SimpleCheckStatusRequest"
+                            "$ref": "#/definitions/models.SimpleCheckStatusRequest"
                         }
                     }
                 ],
@@ -185,19 +209,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -205,6 +229,14 @@ const docTemplate = `{
         },
         "/api/dashboard": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get dashboard data including stats, recent transactions, balance, and real-time monitoring metrics",
                 "consumes": [
                     "application/json"
@@ -222,13 +254,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/main.APIResponse"
+                                    "$ref": "#/definitions/models.APIResponse"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/main.DashboardData"
+                                            "$ref": "#/definitions/models.DashboardData"
                                         }
                                     }
                                 }
@@ -238,105 +270,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/export/invoices": {
-            "get": {
-                "description": "Export invoice data to CSV format with optional filtering",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "text/csv"
-                ],
-                "tags": [
-                    "invoice"
-                ],
-                "summary": "Export invoices to CSV",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter by status (paid, unpaid, pending)",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Search term",
-                        "name": "search",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Start date (YYYY-MM-DD)",
-                        "name": "from",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "End date (YYYY-MM-DD)",
-                        "name": "to",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "CSV data",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/export/transactions": {
-            "get": {
-                "description": "Export transaction data to CSV format with optional filtering",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "text/csv"
-                ],
-                "tags": [
-                    "dashboard"
-                ],
-                "summary": "Export transactions to CSV",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Filter by status (SUCCESS, FAILED, PENDING)",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by source (telegram_bot, whatsapp_bot, etc.)",
-                        "name": "source",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Start date (YYYY-MM-DD)",
-                        "name": "from",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "End date (YYYY-MM-DD)",
-                        "name": "to",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "CSV data",
-                        "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -359,7 +293,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -367,6 +301,14 @@ const docTemplate = `{
         },
         "/api/invoice/stats": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get comprehensive invoice statistics including payment rates and revenue",
                 "consumes": [
                     "application/json"
@@ -382,7 +324,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -390,6 +332,14 @@ const docTemplate = `{
         },
         "/api/invoices": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Retrieve list of invoices with pagination",
                 "consumes": [
                     "application/json"
@@ -420,13 +370,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -434,6 +384,14 @@ const docTemplate = `{
         },
         "/api/invoices/{id}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get detailed information about a specific invoice",
                 "consumes": [
                     "application/json"
@@ -458,13 +416,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -475,6 +433,9 @@ const docTemplate = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
                     }
                 ],
                 "description": "Get recent application logs including request details and response times",
@@ -492,13 +453,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -509,6 +470,9 @@ const docTemplate = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
                     }
                 ],
                 "description": "Get detailed system monitoring data including CPU, memory, disk, network, and performance metrics",
@@ -528,13 +492,13 @@ const docTemplate = `{
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/main.APIResponse"
+                                    "$ref": "#/definitions/models.APIResponse"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/main.SystemMetrics"
+                                            "$ref": "#/definitions/models.SystemMetrics"
                                         }
                                     }
                                 }
@@ -544,7 +508,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -555,6 +519,9 @@ const docTemplate = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
                     }
                 ],
                 "description": "Get live monitoring data from the last 10 minutes",
@@ -572,13 +539,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -589,6 +556,9 @@ const docTemplate = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
                     }
                 ],
                 "description": "Get detailed performance metrics including response times, throughput, and resource usage",
@@ -606,13 +576,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -623,6 +593,9 @@ const docTemplate = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
                     }
                 ],
                 "description": "Get security metrics including unauthorized attempts, threats, and suspicious traffic",
@@ -640,13 +613,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -657,6 +630,9 @@ const docTemplate = `{
                 "security": [
                     {
                         "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
                     }
                 ],
                 "description": "Get service health status, uptime information, and availability metrics",
@@ -674,13 +650,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -688,7 +664,15 @@ const docTemplate = `{
         },
         "/api/otp/request": {
             "post": {
-                "description": "Request OTP code to be sent to the specified phone number. The OTP will be stored in session for 5 minutes.",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Request OTP code to be sent to the specified phone number.",
                 "consumes": [
                     "application/json"
                 ],
@@ -706,7 +690,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.SimpleOTPRequest"
+                            "$ref": "#/definitions/models.SimpleOTPRequest"
                         }
                     }
                 ],
@@ -714,19 +698,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -734,6 +718,14 @@ const docTemplate = `{
         },
         "/api/otp/verify": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Verify OTP code and get access token for purchasing packages",
                 "consumes": [
                     "application/json"
@@ -752,7 +744,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.SimpleVerifyOTPRequest"
+                            "$ref": "#/definitions/models.SimpleVerifyOTPRequest"
                         }
                     }
                 ],
@@ -760,19 +752,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -780,6 +772,14 @@ const docTemplate = `{
         },
         "/api/packages": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Retrieve all available packages from Nadia API without filtering",
                 "consumes": [
                     "application/json"
@@ -804,13 +804,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -818,6 +818,14 @@ const docTemplate = `{
         },
         "/api/packages/search": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Search and filter packages by name, price, payment method, etc.",
                 "consumes": [
                     "application/json"
@@ -836,7 +844,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.PackageSearchRequest"
+                            "$ref": "#/definitions/models.PackageSearchRequest"
                         }
                     }
                 ],
@@ -844,19 +852,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -864,6 +872,14 @@ const docTemplate = `{
         },
         "/api/packages/stock": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Retrieve stock information for all packages",
                 "consumes": [
                     "application/json"
@@ -879,13 +895,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -893,6 +909,14 @@ const docTemplate = `{
         },
         "/api/payment-methods": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Retrieve all available payment methods",
                 "consumes": [
                     "application/json"
@@ -908,13 +932,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -922,6 +946,14 @@ const docTemplate = `{
         },
         "/api/purchase": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Purchase a package using phone number, package code, payment method, and access token",
                 "consumes": [
                     "application/json"
@@ -940,7 +972,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.SimplePurchaseRequest"
+                            "$ref": "#/definitions/models.SimplePurchaseRequest"
                         }
                     }
                 ],
@@ -948,88 +980,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/stats": {
-            "get": {
-                "description": "Get comprehensive system statistics including transaction counts, revenue, and success rates",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "dashboard"
-                ],
-                "summary": "Get system statistics",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/stats/daily": {
-            "get": {
-                "description": "Get transaction statistics grouped by day for the last 30 days",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "dashboard"
-                ],
-                "summary": "Get daily statistics",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/stats/hourly": {
-            "get": {
-                "description": "Get transaction statistics grouped by hour for the last 24 hours",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "dashboard"
-                ],
-                "summary": "Get hourly statistics",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -1037,6 +1000,14 @@ const docTemplate = `{
         },
         "/api/transaction/check": {
             "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Check the status of a transaction by transaction ID",
                 "consumes": [
                     "application/json"
@@ -1055,7 +1026,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.SimpleTransactionCheckRequest"
+                            "$ref": "#/definitions/models.SimpleTransactionCheckRequest"
                         }
                     }
                 ],
@@ -1063,76 +1034,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/transactions": {
-            "get": {
-                "description": "Get paginated transaction history with optional filtering",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "dashboard"
-                ],
-                "summary": "Get transaction history",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "default": 50,
-                        "description": "Limit number of transactions",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 0,
-                        "description": "Offset for pagination",
-                        "name": "offset",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by status (SUCCESS, FAILED, PENDING)",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Filter by source (telegram_bot, whatsapp_bot, etc.)",
-                        "name": "source",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -1140,6 +1054,14 @@ const docTemplate = `{
         },
         "/api/transactions/{id}": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get detailed information about a specific transaction",
                 "consumes": [
                     "application/json"
@@ -1164,13 +1086,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "$ref": "#/definitions/models.APIResponse"
                         }
                     }
                 }
@@ -1178,7 +1100,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "main.APIResponse": {
+        "models.APIResponse": {
             "type": "object",
             "properties": {
                 "data": {},
@@ -1193,7 +1115,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.AuthRequest": {
+        "models.AuthRequest": {
             "type": "object",
             "required": [
                 "api_key"
@@ -1204,7 +1126,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.AuthResponse": {
+        "models.AuthResponse": {
             "type": "object",
             "properties": {
                 "expires_at": {
@@ -1215,7 +1137,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.DBMetrics": {
+        "models.DBMetrics": {
             "type": "object",
             "properties": {
                 "active_connections": {
@@ -1232,48 +1154,48 @@ const docTemplate = `{
                 }
             }
         },
-        "main.DashboardData": {
+        "models.DashboardData": {
             "type": "object",
             "properties": {
                 "balance": {},
                 "invoice_stats": {
-                    "$ref": "#/definitions/main.InvoiceStats"
+                    "$ref": "#/definitions/models.InvoiceStats"
                 },
                 "monitoring_data": {},
                 "recent_invoices": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/main.InvoiceRecord"
+                        "$ref": "#/definitions/models.InvoiceRecord"
                     }
                 },
                 "recent_transactions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/main.TransactionRecord"
+                        "$ref": "#/definitions/models.TransactionRecord"
                     }
                 },
                 "source_breakdown": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/main.SourceStats"
+                        "$ref": "#/definitions/models.SourceStats"
                     }
                 },
                 "stats": {
-                    "$ref": "#/definitions/main.SystemStats"
+                    "$ref": "#/definitions/models.SystemStats"
                 },
                 "system_status": {
                     "type": "string"
                 }
             }
         },
-        "main.DiskMetrics": {
+        "models.DiskMetrics": {
             "type": "object",
             "properties": {
                 "free_bytes": {
                     "type": "integer"
                 },
                 "io_stats": {
-                    "$ref": "#/definitions/main.IOStats"
+                    "$ref": "#/definitions/models.IOStats"
                 },
                 "total_bytes": {
                     "type": "integer"
@@ -1286,7 +1208,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.IOStats": {
+        "models.IOStats": {
             "type": "object",
             "properties": {
                 "read_bytes": {
@@ -1303,7 +1225,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.InvoiceRecord": {
+        "models.InvoiceRecord": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -1345,7 +1267,7 @@ const docTemplate = `{
                 "payments": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/main.PaymentRecord"
+                        "$ref": "#/definitions/models.PaymentRecord"
                     }
                 },
                 "phone": {
@@ -1359,7 +1281,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.InvoiceStats": {
+        "models.InvoiceStats": {
             "type": "object",
             "properties": {
                 "last_updated": {
@@ -1385,7 +1307,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.LoadMetrics": {
+        "models.LoadMetrics": {
             "type": "object",
             "properties": {
                 "load_15min": {
@@ -1399,7 +1321,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.MemoryMetrics": {
+        "models.MemoryMetrics": {
             "type": "object",
             "properties": {
                 "available_bytes": {
@@ -1419,7 +1341,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.NetworkMetrics": {
+        "models.NetworkMetrics": {
             "type": "object",
             "properties": {
                 "bandwidth_mbps": {
@@ -1442,7 +1364,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.PackageSearchRequest": {
+        "models.PackageSearchRequest": {
             "type": "object",
             "properties": {
                 "max_price": {
@@ -1463,7 +1385,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.PaymentRecord": {
+        "models.PaymentRecord": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -1500,7 +1422,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.ResponseTimeMetrics": {
+        "models.ResponseTimeMetrics": {
             "type": "object",
             "properties": {
                 "average_ms": {
@@ -1520,7 +1442,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.SecurityMetrics": {
+        "models.SecurityMetrics": {
             "type": "object",
             "properties": {
                 "firewall_blocks": {
@@ -1529,7 +1451,7 @@ const docTemplate = `{
                 "recent_threats": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/main.SecurityThreat"
+                        "$ref": "#/definitions/models.SecurityThreat"
                     }
                 },
                 "suspicious_traffic": {
@@ -1540,7 +1462,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.SecurityThreat": {
+        "models.SecurityThreat": {
             "type": "object",
             "properties": {
                 "details": {
@@ -1560,7 +1482,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.SimpleCheckStatusRequest": {
+        "models.SimpleCheckStatusRequest": {
             "type": "object",
             "required": [
                 "otp_code",
@@ -1577,7 +1499,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.SimpleOTPRequest": {
+        "models.SimpleOTPRequest": {
             "type": "object",
             "required": [
                 "phone_number"
@@ -1589,7 +1511,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.SimplePurchaseRequest": {
+        "models.SimplePurchaseRequest": {
             "type": "object",
             "required": [
                 "access_token",
@@ -1620,7 +1542,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.SimpleTransactionCheckRequest": {
+        "models.SimpleTransactionCheckRequest": {
             "type": "object",
             "required": [
                 "transaction_id"
@@ -1632,7 +1554,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.SimpleVerifyOTPRequest": {
+        "models.SimpleVerifyOTPRequest": {
             "type": "object",
             "required": [
                 "otp_code",
@@ -1649,7 +1571,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.SourceStats": {
+        "models.SourceStats": {
             "type": "object",
             "properties": {
                 "count": {
@@ -1666,35 +1588,35 @@ const docTemplate = `{
                 }
             }
         },
-        "main.SystemMetrics": {
+        "models.SystemMetrics": {
             "type": "object",
             "properties": {
                 "cpu_usage": {
                     "type": "number"
                 },
                 "db_performance": {
-                    "$ref": "#/definitions/main.DBMetrics"
+                    "$ref": "#/definitions/models.DBMetrics"
                 },
                 "disk_usage": {
-                    "$ref": "#/definitions/main.DiskMetrics"
+                    "$ref": "#/definitions/models.DiskMetrics"
                 },
                 "error_rate": {
                     "type": "number"
                 },
                 "load_average": {
-                    "$ref": "#/definitions/main.LoadMetrics"
+                    "$ref": "#/definitions/models.LoadMetrics"
                 },
                 "memory_usage": {
-                    "$ref": "#/definitions/main.MemoryMetrics"
+                    "$ref": "#/definitions/models.MemoryMetrics"
                 },
                 "network_traffic": {
-                    "$ref": "#/definitions/main.NetworkMetrics"
+                    "$ref": "#/definitions/models.NetworkMetrics"
                 },
                 "response_time": {
-                    "$ref": "#/definitions/main.ResponseTimeMetrics"
+                    "$ref": "#/definitions/models.ResponseTimeMetrics"
                 },
                 "security_metrics": {
-                    "$ref": "#/definitions/main.SecurityMetrics"
+                    "$ref": "#/definitions/models.SecurityMetrics"
                 },
                 "service_status": {
                     "type": "string"
@@ -1706,11 +1628,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "uptime_check": {
-                    "$ref": "#/definitions/main.UptimeMetrics"
+                    "$ref": "#/definitions/models.UptimeMetrics"
                 }
             }
         },
-        "main.SystemStats": {
+        "models.SystemStats": {
             "type": "object",
             "properties": {
                 "failed_transactions": {
@@ -1733,7 +1655,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.TransactionRecord": {
+        "models.TransactionRecord": {
             "type": "object",
             "properties": {
                 "amount": {
@@ -1777,7 +1699,7 @@ const docTemplate = `{
                 }
             }
         },
-        "main.UptimeMetrics": {
+        "models.UptimeMetrics": {
             "type": "object",
             "properties": {
                 "is_up": {
@@ -1800,6 +1722,12 @@ const docTemplate = `{
             "description": "API Key for authentication. Use: nadia-admin-2024-secure-key",
             "type": "apiKey",
             "name": "X-API-Key",
+            "in": "header"
+        },
+        "BearerAuth": {
+            "description": "Type \"Bearer\" followed by a space and the token from /api/auth/login.",
+            "type": "apiKey",
+            "name": "Authorization",
             "in": "header"
         }
     }

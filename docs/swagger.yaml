@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  main.APIResponse:
+  models.APIResponse:
     properties:
       data: {}
       message:
@@ -10,21 +10,21 @@ definitions:
       success:
         type: boolean
     type: object
-  main.AuthRequest:
+  models.AuthRequest:
     properties:
       api_key:
         type: string
     required:
     - api_key
     type: object
-  main.AuthResponse:
+  models.AuthResponse:
     properties:
       expires_at:
         type: string
       token:
         type: string
     type: object
-  main.DBMetrics:
+  models.DBMetrics:
     properties:
       active_connections:
         type: integer
@@ -35,35 +35,35 @@ definitions:
       slow_queries:
         type: integer
     type: object
-  main.DashboardData:
+  models.DashboardData:
     properties:
       balance: {}
       invoice_stats:
-        $ref: '#/definitions/main.InvoiceStats'
+        $ref: '#/definitions/models.InvoiceStats'
       monitoring_data: {}
       recent_invoices:
         items:
-          $ref: '#/definitions/main.InvoiceRecord'
+          $ref: '#/definitions/models.InvoiceRecord'
         type: array
       recent_transactions:
         items:
-          $ref: '#/definitions/main.TransactionRecord'
+          $ref: '#/definitions/models.TransactionRecord'
         type: array
       source_breakdown:
         items:
-          $ref: '#/definitions/main.SourceStats'
+          $ref: '#/definitions/models.SourceStats'
         type: array
       stats:
-        $ref: '#/definitions/main.SystemStats'
+        $ref: '#/definitions/models.SystemStats'
       system_status:
         type: string
     type: object
-  main.DiskMetrics:
+  models.DiskMetrics:
     properties:
       free_bytes:
         type: integer
       io_stats:
-        $ref: '#/definitions/main.IOStats'
+        $ref: '#/definitions/models.IOStats'
       total_bytes:
         type: integer
       used_bytes:
@@ -71,7 +71,7 @@ definitions:
       used_percent:
         type: number
     type: object
-  main.IOStats:
+  models.IOStats:
     properties:
       read_bytes:
         type: integer
@@ -82,7 +82,7 @@ definitions:
       write_ops:
         type: integer
     type: object
-  main.InvoiceRecord:
+  models.InvoiceRecord:
     properties:
       amount:
         type: integer
@@ -111,7 +111,7 @@ definitions:
       paid_at: {}
       payments:
         items:
-          $ref: '#/definitions/main.PaymentRecord'
+          $ref: '#/definitions/models.PaymentRecord'
         type: array
       phone:
         type: string
@@ -120,7 +120,7 @@ definitions:
       username:
         type: string
     type: object
-  main.InvoiceStats:
+  models.InvoiceStats:
     properties:
       last_updated:
         type: string
@@ -137,7 +137,7 @@ definitions:
       unpaid_invoices:
         type: integer
     type: object
-  main.LoadMetrics:
+  models.LoadMetrics:
     properties:
       load_15min:
         type: number
@@ -146,7 +146,7 @@ definitions:
       load_5min:
         type: number
     type: object
-  main.MemoryMetrics:
+  models.MemoryMetrics:
     properties:
       available_bytes:
         type: integer
@@ -159,7 +159,7 @@ definitions:
       used_percent:
         type: number
     type: object
-  main.NetworkMetrics:
+  models.NetworkMetrics:
     properties:
       bandwidth_mbps:
         type: number
@@ -174,7 +174,7 @@ definitions:
       packets_sent:
         type: integer
     type: object
-  main.PackageSearchRequest:
+  models.PackageSearchRequest:
     properties:
       max_price:
         example: 10000
@@ -189,7 +189,7 @@ definitions:
         example: masa aktif
         type: string
     type: object
-  main.PaymentRecord:
+  models.PaymentRecord:
     properties:
       amount:
         type: integer
@@ -214,7 +214,7 @@ definitions:
       reference_type:
         type: string
     type: object
-  main.ResponseTimeMetrics:
+  models.ResponseTimeMetrics:
     properties:
       average_ms:
         type: number
@@ -227,20 +227,20 @@ definitions:
       p99_ms:
         type: number
     type: object
-  main.SecurityMetrics:
+  models.SecurityMetrics:
     properties:
       firewall_blocks:
         type: integer
       recent_threats:
         items:
-          $ref: '#/definitions/main.SecurityThreat'
+          $ref: '#/definitions/models.SecurityThreat'
         type: array
       suspicious_traffic:
         type: integer
       unauthorized_attempts:
         type: integer
     type: object
-  main.SecurityThreat:
+  models.SecurityThreat:
     properties:
       details:
         type: string
@@ -253,7 +253,7 @@ definitions:
       type:
         type: string
     type: object
-  main.SimpleCheckStatusRequest:
+  models.SimpleCheckStatusRequest:
     properties:
       otp_code:
         example: "123456"
@@ -265,7 +265,7 @@ definitions:
     - otp_code
     - phone_number
     type: object
-  main.SimpleOTPRequest:
+  models.SimpleOTPRequest:
     properties:
       phone_number:
         example: "087786388052"
@@ -273,7 +273,7 @@ definitions:
     required:
     - phone_number
     type: object
-  main.SimplePurchaseRequest:
+  models.SimplePurchaseRequest:
     properties:
       access_token:
         example: 1097690:ec321a89-6593-4b01-9a9e-383744301283
@@ -296,7 +296,7 @@ definitions:
     - payment_method
     - phone_number
     type: object
-  main.SimpleTransactionCheckRequest:
+  models.SimpleTransactionCheckRequest:
     properties:
       transaction_id:
         example: a1e3b046-3dda-4eb5-93c2-f0eb01a1a453
@@ -304,7 +304,7 @@ definitions:
     required:
     - transaction_id
     type: object
-  main.SimpleVerifyOTPRequest:
+  models.SimpleVerifyOTPRequest:
     properties:
       otp_code:
         example: "123456"
@@ -316,7 +316,7 @@ definitions:
     - otp_code
     - phone_number
     type: object
-  main.SourceStats:
+  models.SourceStats:
     properties:
       count:
         type: integer
@@ -327,26 +327,26 @@ definitions:
       success_rate:
         type: number
     type: object
-  main.SystemMetrics:
+  models.SystemMetrics:
     properties:
       cpu_usage:
         type: number
       db_performance:
-        $ref: '#/definitions/main.DBMetrics'
+        $ref: '#/definitions/models.DBMetrics'
       disk_usage:
-        $ref: '#/definitions/main.DiskMetrics'
+        $ref: '#/definitions/models.DiskMetrics'
       error_rate:
         type: number
       load_average:
-        $ref: '#/definitions/main.LoadMetrics'
+        $ref: '#/definitions/models.LoadMetrics'
       memory_usage:
-        $ref: '#/definitions/main.MemoryMetrics'
+        $ref: '#/definitions/models.MemoryMetrics'
       network_traffic:
-        $ref: '#/definitions/main.NetworkMetrics'
+        $ref: '#/definitions/models.NetworkMetrics'
       response_time:
-        $ref: '#/definitions/main.ResponseTimeMetrics'
+        $ref: '#/definitions/models.ResponseTimeMetrics'
       security_metrics:
-        $ref: '#/definitions/main.SecurityMetrics'
+        $ref: '#/definitions/models.SecurityMetrics'
       service_status:
         type: string
       throughput:
@@ -354,9 +354,9 @@ definitions:
       timestamp:
         type: string
       uptime_check:
-        $ref: '#/definitions/main.UptimeMetrics'
+        $ref: '#/definitions/models.UptimeMetrics'
     type: object
-  main.SystemStats:
+  models.SystemStats:
     properties:
       failed_transactions:
         type: integer
@@ -371,7 +371,7 @@ definitions:
       total_transactions:
         type: integer
     type: object
-  main.TransactionRecord:
+  models.TransactionRecord:
     properties:
       amount:
         type: integer
@@ -400,7 +400,7 @@ definitions:
       trx_id:
         type: string
     type: object
-  main.UptimeMetrics:
+  models.UptimeMetrics:
     properties:
       is_up:
         type: boolean
@@ -436,7 +436,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/main.AuthRequest'
+          $ref: '#/definitions/models.AuthRequest'
       produces:
       - application/json
       responses:
@@ -444,19 +444,19 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/main.APIResponse'
+            - $ref: '#/definitions/models.APIResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/main.AuthResponse'
+                  $ref: '#/definitions/models.AuthResponse'
               type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
       summary: Authenticate with API key
       tags:
       - authentication
@@ -471,11 +471,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get account balance
       tags:
       - wallet
@@ -490,22 +493,25 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/main.SimpleCheckStatusRequest'
+          $ref: '#/definitions/models.SimpleCheckStatusRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Check active packages on XL card
       tags:
       - card
@@ -521,22 +527,25 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/main.SimpleCheckStatusRequest'
+          $ref: '#/definitions/models.SimpleCheckStatusRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Check XL card status and balance
       tags:
       - card
@@ -553,80 +562,19 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/main.APIResponse'
+            - $ref: '#/definitions/models.APIResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/main.DashboardData'
+                  $ref: '#/definitions/models.DashboardData'
               type: object
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get comprehensive dashboard data
-      tags:
-      - dashboard
-  /api/export/invoices:
-    get:
-      consumes:
-      - application/json
-      description: Export invoice data to CSV format with optional filtering
-      parameters:
-      - description: Filter by status (paid, unpaid, pending)
-        in: query
-        name: status
-        type: string
-      - description: Search term
-        in: query
-        name: search
-        type: string
-      - description: Start date (YYYY-MM-DD)
-        in: query
-        name: from
-        type: string
-      - description: End date (YYYY-MM-DD)
-        in: query
-        name: to
-        type: string
-      produces:
-      - text/csv
-      responses:
-        "200":
-          description: CSV data
-          schema:
-            type: string
-      summary: Export invoices to CSV
-      tags:
-      - invoice
-  /api/export/transactions:
-    get:
-      consumes:
-      - application/json
-      description: Export transaction data to CSV format with optional filtering
-      parameters:
-      - description: Filter by status (SUCCESS, FAILED, PENDING)
-        in: query
-        name: status
-        type: string
-      - description: Filter by source (telegram_bot, whatsapp_bot, etc.)
-        in: query
-        name: source
-        type: string
-      - description: Start date (YYYY-MM-DD)
-        in: query
-        name: from
-        type: string
-      - description: End date (YYYY-MM-DD)
-        in: query
-        name: to
-        type: string
-      produces:
-      - text/csv
-      responses:
-        "200":
-          description: CSV data
-          schema:
-            type: string
-      summary: Export transactions to CSV
       tags:
       - dashboard
   /api/health:
@@ -640,7 +588,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
       summary: Health check
       tags:
       - system
@@ -656,7 +604,10 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get invoice statistics
       tags:
       - invoice
@@ -681,11 +632,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get invoice list
       tags:
       - invoice
@@ -706,11 +660,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get invoice detail
       tags:
       - invoice
@@ -726,13 +683,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
       security:
       - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get application request logs
       tags:
       - monitoring
@@ -749,17 +707,18 @@ paths:
           description: OK
           schema:
             allOf:
-            - $ref: '#/definitions/main.APIResponse'
+            - $ref: '#/definitions/models.APIResponse'
             - properties:
                 data:
-                  $ref: '#/definitions/main.SystemMetrics'
+                  $ref: '#/definitions/models.SystemMetrics'
               type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
       security:
       - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get comprehensive system metrics
       tags:
       - monitoring
@@ -774,13 +733,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
       security:
       - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get real-time metrics
       tags:
       - monitoring
@@ -796,13 +756,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
       security:
       - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get performance metrics
       tags:
       - monitoring
@@ -818,13 +779,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
       security:
       - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get security monitoring data
       tags:
       - monitoring
@@ -840,13 +802,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
       security:
       - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get service uptime status
       tags:
       - monitoring
@@ -854,30 +817,32 @@ paths:
     post:
       consumes:
       - application/json
-      description: Request OTP code to be sent to the specified phone number. The
-        OTP will be stored in session for 5 minutes.
+      description: Request OTP code to be sent to the specified phone number.
       parameters:
       - description: OTP request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/main.SimpleOTPRequest'
+          $ref: '#/definitions/models.SimpleOTPRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Request OTP for phone number
       tags:
       - otp
@@ -892,22 +857,25 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/main.SimpleVerifyOTPRequest'
+          $ref: '#/definitions/models.SimpleVerifyOTPRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Verify OTP and get access token
       tags:
       - otp
@@ -928,11 +896,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get all available packages
       tags:
       - packages
@@ -947,22 +918,25 @@ paths:
         name: search
         required: true
         schema:
-          $ref: '#/definitions/main.PackageSearchRequest'
+          $ref: '#/definitions/models.PackageSearchRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Search packages with filters
       tags:
       - packages
@@ -977,11 +951,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get package stock information
       tags:
       - packages
@@ -996,11 +973,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get available payment methods
       tags:
       - payment
@@ -1016,71 +996,28 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/main.SimplePurchaseRequest'
+          $ref: '#/definitions/models.SimplePurchaseRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Purchase a package with access token
       tags:
       - purchase
-  /api/stats:
-    get:
-      consumes:
-      - application/json
-      description: Get comprehensive system statistics including transaction counts,
-        revenue, and success rates
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/main.APIResponse'
-      summary: Get system statistics
-      tags:
-      - dashboard
-  /api/stats/daily:
-    get:
-      consumes:
-      - application/json
-      description: Get transaction statistics grouped by day for the last 30 days
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/main.APIResponse'
-      summary: Get daily statistics
-      tags:
-      - dashboard
-  /api/stats/hourly:
-    get:
-      consumes:
-      - application/json
-      description: Get transaction statistics grouped by hour for the last 24 hours
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/main.APIResponse'
-      summary: Get hourly statistics
-      tags:
-      - dashboard
   /api/transaction/check:
     post:
       consumes:
@@ -1092,63 +1029,28 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/main.SimpleTransactionCheckRequest'
+          $ref: '#/definitions/models.SimpleTransactionCheckRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Check transaction status
       tags:
       - transaction
-  /api/transactions:
-    get:
-      consumes:
-      - application/json
-      description: Get paginated transaction history with optional filtering
-      parameters:
-      - default: 50
-        description: Limit number of transactions
-        in: query
-        name: limit
-        type: integer
-      - default: 0
-        description: Offset for pagination
-        in: query
-        name: offset
-        type: integer
-      - description: Filter by status (SUCCESS, FAILED, PENDING)
-        in: query
-        name: status
-        type: string
-      - description: Filter by source (telegram_bot, whatsapp_bot, etc.)
-        in: query
-        name: source
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/main.APIResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/main.APIResponse'
-      summary: Get transaction history
-      tags:
-      - dashboard
   /api/transactions/{id}:
     get:
       consumes:
@@ -1166,11 +1068,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get transaction detail
       tags:
       - dashboard
@@ -1182,5 +1087,10 @@ securityDefinitions:
     description: 'API Key for authentication. Use: nadia-admin-2024-secure-key'
     in: header
     name: X-API-Key
+    type: apiKey
+  BearerAuth:
+    description: Type "Bearer" followed by a space and the token from /api/auth/login.
+    in: header
+    name: Authorization
     type: apiKey
 swagger: "2.0"

@@ -20,6 +20,8 @@ import (
 // @Failure 400 {object} models.APIResponse
 // @Failure 500 {object} models.APIResponse
 // @Router /api/card/packages [post]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (h *HTTPHandler) CheckActivePackages(c *gin.Context) {
 	var req models.SimpleCheckStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -59,6 +61,8 @@ func (h *HTTPHandler) CheckActivePackages(c *gin.Context) {
 // @Success 200 {object} models.APIResponse
 // @Failure 500 {object} models.APIResponse
 // @Router /api/balance [get]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (h *HTTPHandler) GetBalance(c *gin.Context) {
 	resp, err := h.nadiaService.MakeRequest("GET", "/wallet/balance.json", nil)
 	if err != nil {
@@ -85,6 +89,8 @@ func (h *HTTPHandler) GetBalance(c *gin.Context) {
 // @Failure 400 {object} models.APIResponse
 // @Failure 500 {object} models.APIResponse
 // @Router /api/transaction/check [post]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (h *HTTPHandler) CheckTransaction(c *gin.Context) {
 	var req models.SimpleTransactionCheckRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -116,6 +122,8 @@ func (h *HTTPHandler) CheckTransaction(c *gin.Context) {
 // @Success 200 {object} models.APIResponse
 // @Failure 500 {object} models.APIResponse
 // @Router /api/payment-methods [get]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (h *HTTPHandler) GetPaymentMethods(c *gin.Context) {
 	resp, err := h.nadiaService.MakeRequest("GET", "/wallet/payment-methods.json", nil)
 	if err != nil {
@@ -140,6 +148,8 @@ func (h *HTTPHandler) GetPaymentMethods(c *gin.Context) {
 // @Success 200 {object} models.APIResponse
 // @Failure 500 {object} models.APIResponse
 // @Router /api/packages/stock [get]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (h *HTTPHandler) GetPackageStock(c *gin.Context) {
 	resp, err := h.nadiaService.MakeRequest("GET", "/limited/xl/check-stock-package-global.json", nil)
 	if err != nil {
@@ -166,6 +176,8 @@ func (h *HTTPHandler) GetPackageStock(c *gin.Context) {
 // @Success 200 {object} models.APIResponse
 // @Failure 500 {object} models.APIResponse
 // @Router /api/invoices [get]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (h *HTTPHandler) GetInvoices(c *gin.Context) {
 	// This is a simplified handler. A full implementation would exist in NadiaService.
 	c.JSON(http.StatusOK, models.APIResponse{StatusCode: http.StatusOK, Message: "Invoice endpoint not fully implemented in this refactor.", Success: true})
@@ -181,6 +193,8 @@ func (h *HTTPHandler) GetInvoices(c *gin.Context) {
 // @Success 200 {object} models.APIResponse
 // @Failure 404 {object} models.APIResponse
 // @Router /api/invoices/{id} [get]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (h *HTTPHandler) GetInvoiceDetail(c *gin.Context) {
 	c.JSON(http.StatusNotFound, models.APIResponse{StatusCode: http.StatusNotFound, Message: "Invoice endpoint not fully implemented in this refactor.", Success: false})
 }
@@ -193,6 +207,8 @@ func (h *HTTPHandler) GetInvoiceDetail(c *gin.Context) {
 // @Produce json
 // @Success 200 {object} models.APIResponse
 // @Router /api/invoice/stats [get]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (h *HTTPHandler) GetInvoiceStatsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, models.APIResponse{StatusCode: http.StatusOK, Message: "Invoice endpoint not fully implemented in this refactor.", Success: true})
 }

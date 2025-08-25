@@ -105,6 +105,8 @@ func (h *HTTPHandler) AuthLogin(c *gin.Context) {
 // @Success 200 {object} models.APIResponse
 // @Failure 500 {object} models.APIResponse
 // @Router /api/packages [get]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (h *HTTPHandler) GetAllPackages(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "100")
 	limit, _ := strconv.Atoi(limitStr)
@@ -141,6 +143,8 @@ func (h *HTTPHandler) GetAllPackages(c *gin.Context) {
 // @Failure 400 {object} models.APIResponse
 // @Failure 500 {object} models.APIResponse
 // @Router /api/packages/search [post]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (h *HTTPHandler) SearchPackages(c *gin.Context) {
 	var searchReq models.PackageSearchRequest
 	if err := c.ShouldBindJSON(&searchReq); err != nil {
@@ -204,6 +208,8 @@ func (h *HTTPHandler) SearchPackages(c *gin.Context) {
 // @Failure 400 {object} models.APIResponse
 // @Failure 500 {object} models.APIResponse
 // @Router /api/otp/request [post]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (h *HTTPHandler) RequestOTP(c *gin.Context) {
 	var req models.SimpleOTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -245,6 +251,8 @@ func (h *HTTPHandler) RequestOTP(c *gin.Context) {
 // @Failure 400 {object} models.APIResponse
 // @Failure 500 {object} models.APIResponse
 // @Router /api/otp/verify [post]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (h *HTTPHandler) VerifyOTP(c *gin.Context) {
 	var req models.SimpleVerifyOTPRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -284,6 +292,8 @@ func (h *HTTPHandler) VerifyOTP(c *gin.Context) {
 // @Failure 400 {object} models.APIResponse
 // @Failure 500 {object} models.APIResponse
 // @Router /api/purchase [post]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (h *HTTPHandler) PurchasePackage(c *gin.Context) {
 	var req models.SimplePurchaseRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -348,6 +358,8 @@ func (h *HTTPHandler) PurchasePackage(c *gin.Context) {
 // @Success 200 {object} models.APIResponse{data=models.DashboardData}
 // @Failure 500 {object} models.APIResponse
 // @Router /api/dashboard [get]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (h *HTTPHandler) GetDashboardData(c *gin.Context) {
 	// This is a simplified version. A full implementation would fetch balance, invoice stats etc.
 	dashboardData := models.DashboardData{
@@ -375,6 +387,8 @@ func (h *HTTPHandler) GetDashboardData(c *gin.Context) {
 // @Success 200 {object} models.APIResponse
 // @Failure 404 {object} models.APIResponse
 // @Router /api/transactions/{id} [get]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (h *HTTPHandler) GetTransactionDetail(c *gin.Context) {
 	id := c.Param("id")
 	tx, exists := h.transactionService.GetTransactionDetail(id)
@@ -396,6 +410,8 @@ func (h *HTTPHandler) GetTransactionDetail(c *gin.Context) {
 // @Failure 400 {object} models.APIResponse
 // @Failure 500 {object} models.APIResponse
 // @Router /api/card/status [post]
+// @Security ApiKeyAuth
+// @Security BearerAuth
 func (h *HTTPHandler) CheckCardStatus(c *gin.Context) {
 	var req models.SimpleCheckStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

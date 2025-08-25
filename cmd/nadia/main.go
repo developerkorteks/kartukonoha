@@ -35,6 +35,11 @@ import (
 // @name X-API-Key
 // @description API Key for authentication. Use: nadia-admin-2024-secure-key
 
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and the token from /api/auth/login.
+
 func main() {
 	// Load configuration
 	cfg := config.LoadConfig()

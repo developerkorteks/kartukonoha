@@ -17,6 +17,7 @@ import (
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security BearerAuth
 // @Success 200 {object} models.APIResponse{data=models.SystemMetrics}
 // @Failure 401 {object} models.APIResponse
 // @Router /api/monitoring/metrics [get]
@@ -40,6 +41,7 @@ func (h *HTTPHandler) GetSystemMetrics(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security BearerAuth
 // @Success 200 {object} models.APIResponse
 // @Failure 401 {object} models.APIResponse
 // @Router /api/monitoring/metrics/realtime [get]
@@ -64,6 +66,7 @@ func (h *HTTPHandler) GetRealtimeMetrics(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security BearerAuth
 // @Success 200 {object} models.APIResponse
 // @Failure 401 {object} models.APIResponse
 // @Router /api/monitoring/security [get]
@@ -84,6 +87,7 @@ func (h *HTTPHandler) GetSecurityMetrics(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security BearerAuth
 // @Success 200 {object} models.APIResponse
 // @Failure 401 {object} models.APIResponse
 // @Router /api/monitoring/logs [get]
@@ -108,6 +112,7 @@ func (h *HTTPHandler) GetApplicationLogs(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security BearerAuth
 // @Success 200 {object} models.APIResponse
 // @Failure 401 {object} models.APIResponse
 // @Router /api/monitoring/performance [get]
@@ -128,6 +133,7 @@ func (h *HTTPHandler) GetPerformanceMetrics(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security ApiKeyAuth
+// @Security BearerAuth
 // @Success 200 {object} models.APIResponse
 // @Failure 401 {object} models.APIResponse
 // @Router /api/monitoring/uptime [get]
