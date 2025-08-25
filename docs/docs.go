@@ -9,21 +9,70 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "termsOfService": "http://swagger.io/terms/",
-        "contact": {
-            "name": "API Support",
-            "url": "http://www.swagger.io/support",
-            "email": "support@swagger.io"
-        },
-        "license": {
-            "name": "MIT",
-            "url": "https://opensource.org/licenses/MIT"
-        },
+        "contact": {},
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/auth/login": {
+            "post": {
+                "description": "Login with API key to get access token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "authentication"
+                ],
+                "summary": "Authenticate with API key",
+                "parameters": [
+                    {
+                        "description": "Authentication request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.AuthRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/main.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/main.AuthResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/main.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/main.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/balance": {
             "get": {
                 "description": "Retrieve current account balance",
@@ -147,7 +196,7 @@ const docTemplate = `{
         },
         "/api/dashboard": {
             "get": {
-                "description": "Get comprehensive dashboard data including stats, recent transactions, and balance",
+                "description": "Get dashboard data including stats, recent transactions, balance, and real-time monitoring metrics",
                 "consumes": [
                     "application/json"
                 ],
@@ -157,18 +206,79 @@ const docTemplate = `{
                 "tags": [
                     "dashboard"
                 ],
-                "summary": "Get dashboard data",
+                "summary": "Get comprehensive dashboard data",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.APIResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/main.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/main.DashboardData"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/main.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/export/invoices": {
+            "get": {
+                "description": "Export invoice data to CSV format with optional filtering",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/csv"
+                ],
+                "tags": [
+                    "invoice"
+                ],
+                "summary": "Export invoices to CSV",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter by status (paid, unpaid, pending)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Search term",
+                        "name": "search",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End date (YYYY-MM-DD)",
+                        "name": "to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "CSV data",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -344,6 +454,222 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/main.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/monitoring/logs": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get recent application logs including request details and response times",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "monitoring"
+                ],
+                "summary": "Get application request logs",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/main.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/monitoring/metrics": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get detailed system monitoring data including CPU, memory, disk, network, and performance metrics",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "monitoring"
+                ],
+                "summary": "Get comprehensive system metrics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/main.APIResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/main.SystemMetrics"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/main.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/monitoring/metrics/realtime": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get live monitoring data from the last 10 minutes",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "monitoring"
+                ],
+                "summary": "Get real-time metrics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/main.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/monitoring/performance": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get detailed performance metrics including response times, throughput, and resource usage",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "monitoring"
+                ],
+                "summary": "Get performance metrics",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/main.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/monitoring/security": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get security metrics including unauthorized attempts, threats, and suspicious traffic",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "monitoring"
+                ],
+                "summary": "Get security monitoring data",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/main.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/monitoring/uptime": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get service health status, uptime information, and availability metrics",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "monitoring"
+                ],
+                "summary": "Get service uptime status",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.APIResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/main.APIResponse"
                         }
@@ -858,6 +1184,255 @@ const docTemplate = `{
                 }
             }
         },
+        "main.AuthRequest": {
+            "type": "object",
+            "required": [
+                "api_key"
+            ],
+            "properties": {
+                "api_key": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.AuthResponse": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.DBMetrics": {
+            "type": "object",
+            "properties": {
+                "active_connections": {
+                    "type": "integer"
+                },
+                "avg_query_time_ms": {
+                    "type": "number"
+                },
+                "queries_per_sec": {
+                    "type": "number"
+                },
+                "slow_queries": {
+                    "type": "integer"
+                }
+            }
+        },
+        "main.DashboardData": {
+            "type": "object",
+            "properties": {
+                "balance": {},
+                "invoice_stats": {
+                    "$ref": "#/definitions/main.InvoiceStats"
+                },
+                "monitoring_data": {},
+                "recent_invoices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/main.InvoiceRecord"
+                    }
+                },
+                "recent_transactions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/main.TransactionRecord"
+                    }
+                },
+                "source_breakdown": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/main.SourceStats"
+                    }
+                },
+                "stats": {
+                    "$ref": "#/definitions/main.SystemStats"
+                },
+                "system_status": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.DiskMetrics": {
+            "type": "object",
+            "properties": {
+                "free_bytes": {
+                    "type": "integer"
+                },
+                "io_stats": {
+                    "$ref": "#/definitions/main.IOStats"
+                },
+                "total_bytes": {
+                    "type": "integer"
+                },
+                "used_bytes": {
+                    "type": "integer"
+                },
+                "used_percent": {
+                    "type": "number"
+                }
+            }
+        },
+        "main.IOStats": {
+            "type": "object",
+            "properties": {
+                "read_bytes": {
+                    "type": "integer"
+                },
+                "read_ops": {
+                    "type": "integer"
+                },
+                "write_bytes": {
+                    "type": "integer"
+                },
+                "write_ops": {
+                    "type": "integer"
+                }
+            }
+        },
+        "main.InvoiceRecord": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "created_at_month": {
+                    "type": "string"
+                },
+                "created_at_year": {
+                    "type": "integer"
+                },
+                "due_date": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "fullname": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "invoice_id": {
+                    "type": "string"
+                },
+                "invoice_status_id": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "modified_at": {},
+                "paid_at": {},
+                "payments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/main.PaymentRecord"
+                    }
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.InvoiceStats": {
+            "type": "object",
+            "properties": {
+                "last_updated": {
+                    "type": "string"
+                },
+                "paid_invoices": {
+                    "type": "integer"
+                },
+                "payment_rate": {
+                    "type": "number"
+                },
+                "pending_invoices": {
+                    "type": "integer"
+                },
+                "total_invoices": {
+                    "type": "integer"
+                },
+                "total_revenue": {
+                    "type": "integer"
+                },
+                "unpaid_invoices": {
+                    "type": "integer"
+                }
+            }
+        },
+        "main.LoadMetrics": {
+            "type": "object",
+            "properties": {
+                "load_15min": {
+                    "type": "number"
+                },
+                "load_1min": {
+                    "type": "number"
+                },
+                "load_5min": {
+                    "type": "number"
+                }
+            }
+        },
+        "main.MemoryMetrics": {
+            "type": "object",
+            "properties": {
+                "available_bytes": {
+                    "type": "integer"
+                },
+                "has_memory_leak": {
+                    "type": "boolean"
+                },
+                "total_bytes": {
+                    "type": "integer"
+                },
+                "used_bytes": {
+                    "type": "integer"
+                },
+                "used_percent": {
+                    "type": "number"
+                }
+            }
+        },
+        "main.NetworkMetrics": {
+            "type": "object",
+            "properties": {
+                "bandwidth_mbps": {
+                    "type": "number"
+                },
+                "bytes_recv": {
+                    "type": "integer"
+                },
+                "bytes_sent": {
+                    "type": "integer"
+                },
+                "latency_ms": {
+                    "type": "number"
+                },
+                "packets_recv": {
+                    "type": "integer"
+                },
+                "packets_sent": {
+                    "type": "integer"
+                }
+            }
+        },
         "main.PackageSearchRequest": {
             "type": "object",
             "properties": {
@@ -876,6 +1451,103 @@ const docTemplate = `{
                 "query": {
                     "type": "string",
                     "example": "masa aktif"
+                }
+            }
+        },
+        "main.PaymentRecord": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "completed_at": {},
+                "created_at": {
+                    "type": "string"
+                },
+                "expired_at": {
+                    "type": "string"
+                },
+                "external_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "payment_link": {
+                    "type": "string"
+                },
+                "payment_method_id": {
+                    "type": "string"
+                },
+                "payment_status_id": {
+                    "type": "string"
+                },
+                "publisher_order_id": {},
+                "reference_id": {
+                    "type": "string"
+                },
+                "reference_type": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.ResponseTimeMetrics": {
+            "type": "object",
+            "properties": {
+                "average_ms": {
+                    "type": "number"
+                },
+                "max_ms": {
+                    "type": "number"
+                },
+                "min_ms": {
+                    "type": "number"
+                },
+                "p95_ms": {
+                    "type": "number"
+                },
+                "p99_ms": {
+                    "type": "number"
+                }
+            }
+        },
+        "main.SecurityMetrics": {
+            "type": "object",
+            "properties": {
+                "firewall_blocks": {
+                    "type": "integer"
+                },
+                "recent_threats": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/main.SecurityThreat"
+                    }
+                },
+                "suspicious_traffic": {
+                    "type": "integer"
+                },
+                "unauthorized_attempts": {
+                    "type": "integer"
+                }
+            }
+        },
+        "main.SecurityThreat": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "type": "string"
+                },
+                "ip": {
+                    "type": "string"
+                },
+                "severity": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         },
@@ -967,18 +1639,163 @@ const docTemplate = `{
                     "example": "087786388052"
                 }
             }
+        },
+        "main.SourceStats": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "revenue": {
+                    "type": "integer"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "success_rate": {
+                    "type": "number"
+                }
+            }
+        },
+        "main.SystemMetrics": {
+            "type": "object",
+            "properties": {
+                "cpu_usage": {
+                    "type": "number"
+                },
+                "db_performance": {
+                    "$ref": "#/definitions/main.DBMetrics"
+                },
+                "disk_usage": {
+                    "$ref": "#/definitions/main.DiskMetrics"
+                },
+                "error_rate": {
+                    "type": "number"
+                },
+                "load_average": {
+                    "$ref": "#/definitions/main.LoadMetrics"
+                },
+                "memory_usage": {
+                    "$ref": "#/definitions/main.MemoryMetrics"
+                },
+                "network_traffic": {
+                    "$ref": "#/definitions/main.NetworkMetrics"
+                },
+                "response_time": {
+                    "$ref": "#/definitions/main.ResponseTimeMetrics"
+                },
+                "security_metrics": {
+                    "$ref": "#/definitions/main.SecurityMetrics"
+                },
+                "service_status": {
+                    "type": "string"
+                },
+                "throughput": {
+                    "type": "number"
+                },
+                "timestamp": {
+                    "type": "string"
+                },
+                "uptime_check": {
+                    "$ref": "#/definitions/main.UptimeMetrics"
+                }
+            }
+        },
+        "main.SystemStats": {
+            "type": "object",
+            "properties": {
+                "failed_transactions": {
+                    "type": "integer"
+                },
+                "last_updated": {
+                    "type": "string"
+                },
+                "success_rate": {
+                    "type": "number"
+                },
+                "successful_transactions": {
+                    "type": "integer"
+                },
+                "total_revenue": {
+                    "type": "integer"
+                },
+                "total_transactions": {
+                    "type": "integer"
+                }
+            }
+        },
+        "main.TransactionRecord": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "completed_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "error_message": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "package_code": {
+                    "type": "string"
+                },
+                "package_name": {
+                    "type": "string"
+                },
+                "payment_method": {
+                    "type": "string"
+                },
+                "phone_number": {
+                    "type": "string"
+                },
+                "processing_fee": {
+                    "type": "integer"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "trx_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.UptimeMetrics": {
+            "type": "object",
+            "properties": {
+                "is_up": {
+                    "type": "boolean"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "response_time_ms": {
+                    "type": "number"
+                },
+                "status_code": {
+                    "type": "integer"
+                }
+            }
         }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "2.0",
-	Host:             "localhost:8080",
-	BasePath:         "/",
-	Schemes:          []string{"http", "https"},
-	Title:            "Nadia Package Purchase API",
-	Description:      "API untuk pembelian paket XL dengan flow yang disederhanakan dan user-friendly",
+	Version:          "",
+	Host:             "",
+	BasePath:         "",
+	Schemes:          []string{},
+	Title:            "",
+	Description:      "",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

@@ -1,4 +1,3 @@
-basePath: /
 definitions:
   main.APIResponse:
     properties:
@@ -9,6 +8,170 @@ definitions:
         type: integer
       success:
         type: boolean
+    type: object
+  main.AuthRequest:
+    properties:
+      api_key:
+        type: string
+    required:
+    - api_key
+    type: object
+  main.AuthResponse:
+    properties:
+      expires_at:
+        type: string
+      token:
+        type: string
+    type: object
+  main.DBMetrics:
+    properties:
+      active_connections:
+        type: integer
+      avg_query_time_ms:
+        type: number
+      queries_per_sec:
+        type: number
+      slow_queries:
+        type: integer
+    type: object
+  main.DashboardData:
+    properties:
+      balance: {}
+      invoice_stats:
+        $ref: '#/definitions/main.InvoiceStats'
+      monitoring_data: {}
+      recent_invoices:
+        items:
+          $ref: '#/definitions/main.InvoiceRecord'
+        type: array
+      recent_transactions:
+        items:
+          $ref: '#/definitions/main.TransactionRecord'
+        type: array
+      source_breakdown:
+        items:
+          $ref: '#/definitions/main.SourceStats'
+        type: array
+      stats:
+        $ref: '#/definitions/main.SystemStats'
+      system_status:
+        type: string
+    type: object
+  main.DiskMetrics:
+    properties:
+      free_bytes:
+        type: integer
+      io_stats:
+        $ref: '#/definitions/main.IOStats'
+      total_bytes:
+        type: integer
+      used_bytes:
+        type: integer
+      used_percent:
+        type: number
+    type: object
+  main.IOStats:
+    properties:
+      read_bytes:
+        type: integer
+      read_ops:
+        type: integer
+      write_bytes:
+        type: integer
+      write_ops:
+        type: integer
+    type: object
+  main.InvoiceRecord:
+    properties:
+      amount:
+        type: integer
+      created_at:
+        type: string
+      created_at_month:
+        type: string
+      created_at_year:
+        type: integer
+      due_date:
+        type: string
+      email:
+        type: string
+      fullname:
+        type: string
+      id:
+        type: string
+      invoice_id:
+        type: string
+      invoice_status_id:
+        type: string
+      metadata:
+        additionalProperties: true
+        type: object
+      modified_at: {}
+      paid_at: {}
+      payments:
+        items:
+          $ref: '#/definitions/main.PaymentRecord'
+        type: array
+      phone:
+        type: string
+      title:
+        type: string
+      username:
+        type: string
+    type: object
+  main.InvoiceStats:
+    properties:
+      last_updated:
+        type: string
+      paid_invoices:
+        type: integer
+      payment_rate:
+        type: number
+      pending_invoices:
+        type: integer
+      total_invoices:
+        type: integer
+      total_revenue:
+        type: integer
+      unpaid_invoices:
+        type: integer
+    type: object
+  main.LoadMetrics:
+    properties:
+      load_15min:
+        type: number
+      load_1min:
+        type: number
+      load_5min:
+        type: number
+    type: object
+  main.MemoryMetrics:
+    properties:
+      available_bytes:
+        type: integer
+      has_memory_leak:
+        type: boolean
+      total_bytes:
+        type: integer
+      used_bytes:
+        type: integer
+      used_percent:
+        type: number
+    type: object
+  main.NetworkMetrics:
+    properties:
+      bandwidth_mbps:
+        type: number
+      bytes_recv:
+        type: integer
+      bytes_sent:
+        type: integer
+      latency_ms:
+        type: number
+      packets_recv:
+        type: integer
+      packets_sent:
+        type: integer
     type: object
   main.PackageSearchRequest:
     properties:
@@ -23,6 +186,70 @@ definitions:
         type: string
       query:
         example: masa aktif
+        type: string
+    type: object
+  main.PaymentRecord:
+    properties:
+      amount:
+        type: integer
+      completed_at: {}
+      created_at:
+        type: string
+      expired_at:
+        type: string
+      external_id:
+        type: string
+      id:
+        type: string
+      payment_link:
+        type: string
+      payment_method_id:
+        type: string
+      payment_status_id:
+        type: string
+      publisher_order_id: {}
+      reference_id:
+        type: string
+      reference_type:
+        type: string
+    type: object
+  main.ResponseTimeMetrics:
+    properties:
+      average_ms:
+        type: number
+      max_ms:
+        type: number
+      min_ms:
+        type: number
+      p95_ms:
+        type: number
+      p99_ms:
+        type: number
+    type: object
+  main.SecurityMetrics:
+    properties:
+      firewall_blocks:
+        type: integer
+      recent_threats:
+        items:
+          $ref: '#/definitions/main.SecurityThreat'
+        type: array
+      suspicious_traffic:
+        type: integer
+      unauthorized_attempts:
+        type: integer
+    type: object
+  main.SecurityThreat:
+    properties:
+      details:
+        type: string
+      ip:
+        type: string
+      severity:
+        type: string
+      timestamp:
+        type: string
+      type:
         type: string
     type: object
   main.SimpleCheckStatusRequest:
@@ -88,20 +315,139 @@ definitions:
     - otp_code
     - phone_number
     type: object
-host: localhost:8080
+  main.SourceStats:
+    properties:
+      count:
+        type: integer
+      revenue:
+        type: integer
+      source:
+        type: string
+      success_rate:
+        type: number
+    type: object
+  main.SystemMetrics:
+    properties:
+      cpu_usage:
+        type: number
+      db_performance:
+        $ref: '#/definitions/main.DBMetrics'
+      disk_usage:
+        $ref: '#/definitions/main.DiskMetrics'
+      error_rate:
+        type: number
+      load_average:
+        $ref: '#/definitions/main.LoadMetrics'
+      memory_usage:
+        $ref: '#/definitions/main.MemoryMetrics'
+      network_traffic:
+        $ref: '#/definitions/main.NetworkMetrics'
+      response_time:
+        $ref: '#/definitions/main.ResponseTimeMetrics'
+      security_metrics:
+        $ref: '#/definitions/main.SecurityMetrics'
+      service_status:
+        type: string
+      throughput:
+        type: number
+      timestamp:
+        type: string
+      uptime_check:
+        $ref: '#/definitions/main.UptimeMetrics'
+    type: object
+  main.SystemStats:
+    properties:
+      failed_transactions:
+        type: integer
+      last_updated:
+        type: string
+      success_rate:
+        type: number
+      successful_transactions:
+        type: integer
+      total_revenue:
+        type: integer
+      total_transactions:
+        type: integer
+    type: object
+  main.TransactionRecord:
+    properties:
+      amount:
+        type: integer
+      completed_at:
+        type: string
+      created_at:
+        type: string
+      error_message:
+        type: string
+      id:
+        type: string
+      package_code:
+        type: string
+      package_name:
+        type: string
+      payment_method:
+        type: string
+      phone_number:
+        type: string
+      processing_fee:
+        type: integer
+      source:
+        type: string
+      status:
+        type: string
+      trx_id:
+        type: string
+    type: object
+  main.UptimeMetrics:
+    properties:
+      is_up:
+        type: boolean
+      location:
+        type: string
+      response_time_ms:
+        type: number
+      status_code:
+        type: integer
+    type: object
 info:
-  contact:
-    email: support@swagger.io
-    name: API Support
-    url: http://www.swagger.io/support
-  description: API untuk pembelian paket XL dengan flow yang disederhanakan dan user-friendly
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-  termsOfService: http://swagger.io/terms/
-  title: Nadia Package Purchase API
-  version: "2.0"
+  contact: {}
 paths:
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login with API key to get access token
+      parameters:
+      - description: Authentication request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.AuthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/main.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/main.AuthResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      summary: Authenticate with API key
+      tags:
+      - authentication
   /api/balance:
     get:
       consumes:
@@ -186,22 +532,59 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get comprehensive dashboard data including stats, recent transactions,
-        and balance
+      description: Get dashboard data including stats, recent transactions, balance,
+        and real-time monitoring metrics
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.APIResponse'
+            allOf:
+            - $ref: '#/definitions/main.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/main.DashboardData'
+              type: object
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/main.APIResponse'
-      summary: Get dashboard data
+      summary: Get comprehensive dashboard data
       tags:
       - dashboard
+  /api/export/invoices:
+    get:
+      consumes:
+      - application/json
+      description: Export invoice data to CSV format with optional filtering
+      parameters:
+      - description: Filter by status (paid, unpaid, pending)
+        in: query
+        name: status
+        type: string
+      - description: Search term
+        in: query
+        name: search
+        type: string
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: to
+        type: string
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: CSV data
+          schema:
+            type: string
+      summary: Export invoices to CSV
+      tags:
+      - invoice
   /api/export/transactions:
     get:
       consumes:
@@ -319,6 +702,142 @@ paths:
       summary: Get invoice detail
       tags:
       - invoice
+  /api/monitoring/logs:
+    get:
+      consumes:
+      - application/json
+      description: Get recent application logs including request details and response
+        times
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get application request logs
+      tags:
+      - monitoring
+  /api/monitoring/metrics:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed system monitoring data including CPU, memory, disk,
+        network, and performance metrics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/main.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/main.SystemMetrics'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get comprehensive system metrics
+      tags:
+      - monitoring
+  /api/monitoring/metrics/realtime:
+    get:
+      consumes:
+      - application/json
+      description: Get live monitoring data from the last 10 minutes
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get real-time metrics
+      tags:
+      - monitoring
+  /api/monitoring/performance:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed performance metrics including response times, throughput,
+        and resource usage
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get performance metrics
+      tags:
+      - monitoring
+  /api/monitoring/security:
+    get:
+      consumes:
+      - application/json
+      description: Get security metrics including unauthorized attempts, threats,
+        and suspicious traffic
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get security monitoring data
+      tags:
+      - monitoring
+  /api/monitoring/uptime:
+    get:
+      consumes:
+      - application/json
+      description: Get service health status, uptime information, and availability
+        metrics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/main.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get service uptime status
+      tags:
+      - monitoring
   /api/otp/request:
     post:
       consumes:
@@ -643,7 +1162,4 @@ paths:
       summary: Get transaction detail
       tags:
       - dashboard
-schemes:
-- http
-- https
 swagger: "2.0"

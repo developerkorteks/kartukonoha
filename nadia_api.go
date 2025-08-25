@@ -15,6 +15,11 @@
 // @BasePath /
 // @schemes http https
 
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name X-API-Key
+// @description API Key for authentication. Use: nadia-admin-2024-secure-key
+
 package main
 
 import (
@@ -26,10 +31,17 @@ import (
 	"log"
 	"net/http"
 	"net/http/cookiejar"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/disk"
+	"github.com/shirou/gopsutil/v3/load"
+	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/shirou/gopsutil/v3/net"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
@@ -94,6 +106,120 @@ type PaymentMethod struct {
 	PaymentMethod            string `json:"payment_method"`
 	PaymentMethodDisplayName string `json:"payment_method_display_name"`
 	Description              string `json:"desc"`
+}
+
+// Monitoring structures
+type SystemMetrics struct {
+	ServiceStatus   string              `json:"service_status"`
+	ResponseTime    ResponseTimeMetrics `json:"response_time"`
+	ErrorRate       float64             `json:"error_rate"`
+	CPUUsage        float64             `json:"cpu_usage"`
+	MemoryUsage     MemoryMetrics       `json:"memory_usage"`
+	DiskUsage       DiskMetrics         `json:"disk_usage"`
+	NetworkTraffic  NetworkMetrics      `json:"network_traffic"`
+	LoadAverage     LoadMetrics         `json:"load_average"`
+	Throughput      float64             `json:"throughput"`
+	DBPerformance   DBMetrics           `json:"db_performance"`
+	SecurityMetrics SecurityMetrics     `json:"security_metrics"`
+	UptimeCheck     UptimeMetrics       `json:"uptime_check"`
+	Timestamp       time.Time           `json:"timestamp"`
+}
+
+type ResponseTimeMetrics struct {
+	Average float64 `json:"average_ms"`
+	P95     float64 `json:"p95_ms"`
+	P99     float64 `json:"p99_ms"`
+	Min     float64 `json:"min_ms"`
+	Max     float64 `json:"max_ms"`
+}
+
+type MemoryMetrics struct {
+	Used        uint64  `json:"used_bytes"`
+	Total       uint64  `json:"total_bytes"`
+	UsedPercent float64 `json:"used_percent"`
+	Available   uint64  `json:"available_bytes"`
+	HasLeak     bool    `json:"has_memory_leak"`
+}
+
+type DiskMetrics struct {
+	Used        uint64  `json:"used_bytes"`
+	Total       uint64  `json:"total_bytes"`
+	UsedPercent float64 `json:"used_percent"`
+	Free        uint64  `json:"free_bytes"`
+	IOStats     IOStats `json:"io_stats"`
+}
+
+type IOStats struct {
+	ReadBytes  uint64 `json:"read_bytes"`
+	WriteBytes uint64 `json:"write_bytes"`
+	ReadOps    uint64 `json:"read_ops"`
+	WriteOps   uint64 `json:"write_ops"`
+}
+
+type NetworkMetrics struct {
+	BytesSent   uint64  `json:"bytes_sent"`
+	BytesRecv   uint64  `json:"bytes_recv"`
+	PacketsSent uint64  `json:"packets_sent"`
+	PacketsRecv uint64  `json:"packets_recv"`
+	Latency     float64 `json:"latency_ms"`
+	Bandwidth   float64 `json:"bandwidth_mbps"`
+}
+
+type LoadMetrics struct {
+	Load1  float64 `json:"load_1min"`
+	Load5  float64 `json:"load_5min"`
+	Load15 float64 `json:"load_15min"`
+}
+
+type DBMetrics struct {
+	QueryTime     float64 `json:"avg_query_time_ms"`
+	SlowQueries   int     `json:"slow_queries"`
+	Connections   int     `json:"active_connections"`
+	QueriesPerSec float64 `json:"queries_per_sec"`
+}
+
+type SecurityMetrics struct {
+	UnauthorizedAttempts int              `json:"unauthorized_attempts"`
+	SuspiciousTraffic    int              `json:"suspicious_traffic"`
+	FirewallBlocks       int              `json:"firewall_blocks"`
+	RecentThreats        []SecurityThreat `json:"recent_threats"`
+}
+
+type SecurityThreat struct {
+	IP        string    `json:"ip"`
+	Type      string    `json:"type"`
+	Severity  string    `json:"severity"`
+	Timestamp time.Time `json:"timestamp"`
+	Details   string    `json:"details"`
+}
+
+type UptimeMetrics struct {
+	IsUp         bool    `json:"is_up"`
+	ResponseTime float64 `json:"response_time_ms"`
+	StatusCode   int     `json:"status_code"`
+	Location     string  `json:"location"`
+}
+
+// Request tracking for metrics
+type RequestMetrics struct {
+	StartTime    time.Time
+	EndTime      time.Time
+	StatusCode   int
+	ResponseTime float64
+	Path         string
+	Method       string
+	IP           string
+	UserAgent    string
+}
+
+// Auth structures
+type AuthRequest struct {
+	APIKey string `json:"api_key" binding:"required"`
+}
+
+type AuthResponse struct {
+	Token     string    `json:"token"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 // Simple request structures for easier use
@@ -201,6 +327,7 @@ type DashboardData struct {
 	SourceBreakdown    []SourceStats       `json:"source_breakdown"`
 	Balance            interface{}         `json:"balance"`
 	SystemStatus       string              `json:"system_status"`
+	MonitoringData     interface{}         `json:"monitoring_data"`
 }
 
 type SimpleCheckStatusRequest struct {
@@ -237,6 +364,18 @@ var (
 	// Transaction tracking (keep in-memory for fast access, sync with DB)
 	transactions     = make(map[string]*TransactionRecord)
 	transactionMutex = sync.RWMutex{}
+
+	// Monitoring variables
+	requestMetrics    = make([]RequestMetrics, 0)
+	requestMetricsMux sync.RWMutex
+	securityThreats   = make([]SecurityThreat, 0)
+	securityMutex     sync.RWMutex
+	serverStartTime   = time.Now()
+	totalRequests     int64
+	totalErrors       int64
+	unauthorizedCount int64
+	suspiciousTraffic int64
+	metricsMutex      sync.RWMutex
 )
 
 // Token manager (reuse from existing code)
@@ -1678,6 +1817,284 @@ func getPackagePrice(packageCode string) int {
 	return 0
 }
 
+// Authentication middleware
+func authMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Skip auth for health check and public endpoints
+		if c.Request.URL.Path == "/api/health" ||
+			c.Request.URL.Path == "/swagger/*" ||
+			strings.HasPrefix(c.Request.URL.Path, "/swagger/") {
+			c.Next()
+			return
+		}
+
+		apiKey := c.GetHeader("X-API-Key")
+		if apiKey == "" {
+			apiKey = c.Query("api_key")
+		}
+
+		if apiKey != adminAPIKey {
+			// Log unauthorized attempt
+			logSecurityThreat(c.ClientIP(), "unauthorized_access", "medium",
+				fmt.Sprintf("Invalid API key attempt from %s", c.ClientIP()))
+
+			metricsMutex.Lock()
+			unauthorizedCount++
+			metricsMutex.Unlock()
+
+			c.JSON(401, APIResponse{
+				StatusCode: 401,
+				Message:    "Unauthorized: Invalid API key",
+				Success:    false,
+			})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
+
+// Monitoring middleware
+func monitoringMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		startTime := time.Now()
+
+		// Process request
+		c.Next()
+
+		// Record metrics
+		endTime := time.Now()
+		responseTime := float64(endTime.Sub(startTime).Nanoseconds()) / 1e6 // Convert to milliseconds
+
+		metric := RequestMetrics{
+			StartTime:    startTime,
+			EndTime:      endTime,
+			StatusCode:   c.Writer.Status(),
+			ResponseTime: responseTime,
+			Path:         c.Request.URL.Path,
+			Method:       c.Request.Method,
+			IP:           c.ClientIP(),
+			UserAgent:    c.Request.UserAgent(),
+		}
+
+		// Store metrics (keep last 1000 requests)
+		requestMetricsMux.Lock()
+		requestMetrics = append(requestMetrics, metric)
+		if len(requestMetrics) > 1000 {
+			requestMetrics = requestMetrics[1:]
+		}
+		requestMetricsMux.Unlock()
+
+		// Update counters
+		metricsMutex.Lock()
+		totalRequests++
+		if c.Writer.Status() >= 500 {
+			totalErrors++
+		}
+		metricsMutex.Unlock()
+
+		// Check for suspicious activity
+		if responseTime > 5000 { // > 5 seconds
+			logSecurityThreat(c.ClientIP(), "slow_response", "low",
+				fmt.Sprintf("Slow response time: %.2fms for %s", responseTime, c.Request.URL.Path))
+		}
+
+		// Log request
+		log.Printf("[%s] %s %s - %d - %.2fms - %s",
+			c.Request.Method, c.Request.URL.Path, c.ClientIP(),
+			c.Writer.Status(), responseTime, c.Request.UserAgent())
+	}
+}
+
+// Security logging
+func logSecurityThreat(ip, threatType, severity, details string) {
+	threat := SecurityThreat{
+		IP:        ip,
+		Type:      threatType,
+		Severity:  severity,
+		Timestamp: time.Now(),
+		Details:   details,
+	}
+
+	securityMutex.Lock()
+	securityThreats = append(securityThreats, threat)
+	// Keep only last 100 threats
+	if len(securityThreats) > 100 {
+		securityThreats = securityThreats[1:]
+	}
+	securityMutex.Unlock()
+
+	// Log to system
+	log.Printf("[SECURITY] %s - %s from %s: %s", severity, threatType, ip, details)
+}
+
+// System metrics collection
+func collectSystemMetrics() SystemMetrics {
+	// CPU Usage
+	cpuPercent, _ := cpu.Percent(time.Second, false)
+	var cpuUsage float64
+	if len(cpuPercent) > 0 {
+		cpuUsage = cpuPercent[0]
+	}
+
+	// Memory Usage
+	memInfo, _ := mem.VirtualMemory()
+	memoryMetrics := MemoryMetrics{
+		Used:        memInfo.Used,
+		Total:       memInfo.Total,
+		UsedPercent: memInfo.UsedPercent,
+		Available:   memInfo.Available,
+		HasLeak:     memInfo.UsedPercent > 90, // Simple leak detection
+	}
+
+	// Disk Usage
+	diskInfo, _ := disk.Usage("/")
+	diskMetrics := DiskMetrics{
+		Used:        diskInfo.Used,
+		Total:       diskInfo.Total,
+		UsedPercent: diskInfo.UsedPercent,
+		Free:        diskInfo.Free,
+		IOStats:     IOStats{}, // Would need more complex implementation
+	}
+
+	// Load Average
+	loadInfo, _ := load.Avg()
+	loadMetrics := LoadMetrics{
+		Load1:  loadInfo.Load1,
+		Load5:  loadInfo.Load5,
+		Load15: loadInfo.Load15,
+	}
+
+	// Network Stats
+	netStats, _ := net.IOCounters(false)
+	var networkMetrics NetworkMetrics
+	if len(netStats) > 0 {
+		networkMetrics = NetworkMetrics{
+			BytesSent:   netStats[0].BytesSent,
+			BytesRecv:   netStats[0].BytesRecv,
+			PacketsSent: netStats[0].PacketsSent,
+			PacketsRecv: netStats[0].PacketsRecv,
+			Latency:     0, // Would need ping implementation
+			Bandwidth:   0, // Would need calculation
+		}
+	}
+
+	// Response Time Metrics
+	responseTimeMetrics := calculateResponseTimeMetrics()
+
+	// Error Rate
+	metricsMutex.RLock()
+	var errorRate float64
+	if totalRequests > 0 {
+		errorRate = float64(totalErrors) / float64(totalRequests) * 100
+	}
+
+	// Throughput (requests per second)
+	uptime := time.Since(serverStartTime).Seconds()
+	throughput := float64(totalRequests) / uptime
+	metricsMutex.RUnlock()
+
+	// Security Metrics
+	securityMutex.RLock()
+	securityMetrics := SecurityMetrics{
+		UnauthorizedAttempts: int(unauthorizedCount),
+		SuspiciousTraffic:    int(suspiciousTraffic),
+		FirewallBlocks:       0, // Would need firewall integration
+		RecentThreats:        append([]SecurityThreat{}, securityThreats...),
+	}
+	securityMutex.RUnlock()
+
+	return SystemMetrics{
+		ServiceStatus:   "running",
+		ResponseTime:    responseTimeMetrics,
+		ErrorRate:       errorRate,
+		CPUUsage:        cpuUsage,
+		MemoryUsage:     memoryMetrics,
+		DiskUsage:       diskMetrics,
+		NetworkTraffic:  networkMetrics,
+		LoadAverage:     loadMetrics,
+		Throughput:      throughput,
+		DBPerformance:   calculateDBMetrics(),
+		SecurityMetrics: securityMetrics,
+		UptimeCheck:     checkUptime(),
+		Timestamp:       time.Now(),
+	}
+}
+
+func calculateResponseTimeMetrics() ResponseTimeMetrics {
+	requestMetricsMux.RLock()
+	defer requestMetricsMux.RUnlock()
+
+	if len(requestMetrics) == 0 {
+		return ResponseTimeMetrics{}
+	}
+
+	// Extract response times
+	times := make([]float64, len(requestMetrics))
+	var sum float64
+	min := requestMetrics[0].ResponseTime
+	max := requestMetrics[0].ResponseTime
+
+	for i, metric := range requestMetrics {
+		times[i] = metric.ResponseTime
+		sum += metric.ResponseTime
+		if metric.ResponseTime < min {
+			min = metric.ResponseTime
+		}
+		if metric.ResponseTime > max {
+			max = metric.ResponseTime
+		}
+	}
+
+	// Sort for percentiles
+	for i := 0; i < len(times)-1; i++ {
+		for j := i + 1; j < len(times); j++ {
+			if times[i] > times[j] {
+				times[i], times[j] = times[j], times[i]
+			}
+		}
+	}
+
+	// Calculate percentiles
+	p95Index := int(float64(len(times)) * 0.95)
+	p99Index := int(float64(len(times)) * 0.99)
+	if p95Index >= len(times) {
+		p95Index = len(times) - 1
+	}
+	if p99Index >= len(times) {
+		p99Index = len(times) - 1
+	}
+
+	return ResponseTimeMetrics{
+		Average: sum / float64(len(times)),
+		P95:     times[p95Index],
+		P99:     times[p99Index],
+		Min:     min,
+		Max:     max,
+	}
+}
+
+func calculateDBMetrics() DBMetrics {
+	// Simple DB metrics - would need more sophisticated implementation
+	return DBMetrics{
+		QueryTime:     0, // Would measure actual query times
+		SlowQueries:   0,
+		Connections:   1, // Current connection count
+		QueriesPerSec: 0,
+	}
+}
+
+func checkUptime() UptimeMetrics {
+	// Simple uptime check
+	return UptimeMetrics{
+		IsUp:         true,
+		ResponseTime: 0, // Would ping external endpoint
+		StatusCode:   200,
+		Location:     "localhost",
+	}
+}
+
 // Database functions
 func initDatabase() error {
 	var err error
@@ -1833,6 +2250,305 @@ func getAllTransactionsFromDB(limit int) ([]*TransactionRecord, error) {
 	return result, nil
 }
 
+// Helper function to check database status
+func getDatabaseStatus() string {
+	if db == nil {
+		return "DISCONNECTED"
+	}
+
+	// Test database connection
+	if err := db.Ping(); err != nil {
+		return "ERROR"
+	}
+
+	return "CONNECTED"
+}
+
+// AuthLogin godoc
+// @Summary Authenticate with API key
+// @Description Login with API key to get access token
+// @Tags authentication
+// @Accept json
+// @Produce json
+// @Param request body AuthRequest true "Authentication request"
+// @Success 200 {object} APIResponse{data=AuthResponse}
+// @Failure 400 {object} APIResponse
+// @Failure 401 {object} APIResponse
+// @Router /api/auth/login [post]
+func authLogin(c *gin.Context) {
+	var req AuthRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, APIResponse{
+			StatusCode: 400,
+			Message:    "Invalid request format",
+			Success:    false,
+		})
+		return
+	}
+
+	if req.APIKey != adminAPIKey {
+		// Log unauthorized attempt
+		logSecurityThreat(c.ClientIP(), "invalid_login", "high",
+			fmt.Sprintf("Invalid API key login attempt from %s", c.ClientIP()))
+
+		c.JSON(401, APIResponse{
+			StatusCode: 401,
+			Message:    "Invalid API key",
+			Success:    false,
+		})
+		return
+	}
+
+	// Generate simple token (in production, use JWT)
+	token := fmt.Sprintf("nadia-token-%d", time.Now().Unix())
+	expiresAt := time.Now().Add(24 * time.Hour)
+
+	c.JSON(200, APIResponse{
+		StatusCode: 200,
+		Message:    "Authentication successful",
+		Success:    true,
+		Data: AuthResponse{
+			Token:     token,
+			ExpiresAt: expiresAt,
+		},
+	})
+}
+
+// GetSystemMetrics godoc
+// @Summary Get comprehensive system metrics
+// @Description Get detailed system monitoring data including CPU, memory, disk, network, and performance metrics
+// @Tags monitoring
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} APIResponse{data=SystemMetrics}
+// @Failure 401 {object} APIResponse
+// @Router /api/monitoring/metrics [get]
+func getSystemMetrics(c *gin.Context) {
+	metrics := collectSystemMetrics()
+
+	c.JSON(200, APIResponse{
+		StatusCode: 200,
+		Message:    "System metrics retrieved successfully",
+		Success:    true,
+		Data:       metrics,
+	})
+}
+
+// GetRealtimeMetrics godoc
+// @Summary Get real-time metrics
+// @Description Get live monitoring data from the last 10 minutes
+// @Tags monitoring
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} APIResponse
+// @Failure 401 {object} APIResponse
+// @Router /api/monitoring/metrics/realtime [get]
+func getRealtimeMetrics(c *gin.Context) {
+	// Get last 10 minutes of metrics
+	requestMetricsMux.RLock()
+	recentMetrics := make([]RequestMetrics, 0)
+	cutoff := time.Now().Add(-10 * time.Minute)
+
+	for _, metric := range requestMetrics {
+		if metric.StartTime.After(cutoff) {
+			recentMetrics = append(recentMetrics, metric)
+		}
+	}
+	requestMetricsMux.RUnlock()
+
+	c.JSON(200, APIResponse{
+		StatusCode: 200,
+		Message:    "Realtime metrics retrieved successfully",
+		Success:    true,
+		Data: map[string]interface{}{
+			"recent_requests": recentMetrics,
+			"timestamp":       time.Now(),
+			"window_minutes":  10,
+		},
+	})
+}
+
+// GetSecurityMetrics godoc
+// @Summary Get security monitoring data
+// @Description Get security metrics including unauthorized attempts, threats, and suspicious traffic
+// @Tags monitoring
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} APIResponse
+// @Failure 401 {object} APIResponse
+// @Router /api/monitoring/security [get]
+func getSecurityMetrics(c *gin.Context) {
+	securityMutex.RLock()
+	threats := append([]SecurityThreat{}, securityThreats...)
+	securityMutex.RUnlock()
+
+	metricsMutex.RLock()
+	metrics := map[string]interface{}{
+		"unauthorized_attempts": unauthorizedCount,
+		"suspicious_traffic":    suspiciousTraffic,
+		"recent_threats":        threats,
+		"total_requests":        totalRequests,
+		"total_errors":          totalErrors,
+		"timestamp":             time.Now(),
+	}
+	metricsMutex.RUnlock()
+
+	c.JSON(200, APIResponse{
+		StatusCode: 200,
+		Message:    "Security metrics retrieved successfully",
+		Success:    true,
+		Data:       metrics,
+	})
+}
+
+// GetApplicationLogs godoc
+// @Summary Get application request logs
+// @Description Get recent application logs including request details and response times
+// @Tags monitoring
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} APIResponse
+// @Failure 401 {object} APIResponse
+// @Router /api/monitoring/logs [get]
+func getApplicationLogs(c *gin.Context) {
+	// In a real implementation, you'd read from log files
+	// For now, return recent request logs
+	requestMetricsMux.RLock()
+	recentLogs := make([]map[string]interface{}, 0)
+
+	// Get last 50 requests
+	start := len(requestMetrics) - 50
+	if start < 0 {
+		start = 0
+	}
+
+	for i := start; i < len(requestMetrics); i++ {
+		metric := requestMetrics[i]
+		logEntry := map[string]interface{}{
+			"timestamp":     metric.StartTime,
+			"method":        metric.Method,
+			"path":          metric.Path,
+			"status_code":   metric.StatusCode,
+			"response_time": metric.ResponseTime,
+			"ip":            metric.IP,
+			"user_agent":    metric.UserAgent,
+		}
+		recentLogs = append(recentLogs, logEntry)
+	}
+	requestMetricsMux.RUnlock()
+
+	c.JSON(200, APIResponse{
+		StatusCode: 200,
+		Message:    "Application logs retrieved successfully",
+		Success:    true,
+		Data: map[string]interface{}{
+			"logs":      recentLogs,
+			"timestamp": time.Now(),
+			"count":     len(recentLogs),
+		},
+	})
+}
+
+// GetPerformanceMetrics godoc
+// @Summary Get performance metrics
+// @Description Get detailed performance metrics including response times, throughput, and resource usage
+// @Tags monitoring
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} APIResponse
+// @Failure 401 {object} APIResponse
+// @Router /api/monitoring/performance [get]
+func getPerformanceMetrics(c *gin.Context) {
+	responseTimeMetrics := calculateResponseTimeMetrics()
+
+	// Memory stats
+	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
+
+	// CPU usage
+	cpuPercent, _ := cpu.Percent(time.Second, false)
+	var cpuUsage float64
+	if len(cpuPercent) > 0 {
+		cpuUsage = cpuPercent[0]
+	}
+
+	metricsMutex.RLock()
+	uptime := time.Since(serverStartTime).Seconds()
+	throughput := float64(totalRequests) / uptime
+	errorRate := float64(totalErrors) / float64(totalRequests) * 100
+	metricsMutex.RUnlock()
+
+	performance := map[string]interface{}{
+		"response_time":  responseTimeMetrics,
+		"throughput_rps": throughput,
+		"error_rate":     errorRate,
+		"cpu_usage":      cpuUsage,
+		"memory": map[string]interface{}{
+			"alloc_mb":       float64(memStats.Alloc) / 1024 / 1024,
+			"total_alloc_mb": float64(memStats.TotalAlloc) / 1024 / 1024,
+			"sys_mb":         float64(memStats.Sys) / 1024 / 1024,
+			"gc_runs":        memStats.NumGC,
+		},
+		"uptime_seconds": uptime,
+		"timestamp":      time.Now(),
+	}
+
+	c.JSON(200, APIResponse{
+		StatusCode: 200,
+		Message:    "Performance metrics retrieved successfully",
+		Success:    true,
+		Data:       performance,
+	})
+}
+
+// GetUptimeStatus godoc
+// @Summary Get service uptime status
+// @Description Get service health status, uptime information, and availability metrics
+// @Tags monitoring
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Success 200 {object} APIResponse
+// @Failure 401 {object} APIResponse
+// @Router /api/monitoring/uptime [get]
+func getUptimeStatus(c *gin.Context) {
+	uptime := time.Since(serverStartTime)
+
+	// Check if service is healthy
+	isHealthy := true
+	healthStatus := "healthy"
+
+	// Simple health checks
+	if db == nil {
+		isHealthy = false
+		healthStatus = "database_unavailable"
+	}
+
+	status := map[string]interface{}{
+		"is_up":          true,
+		"is_healthy":     isHealthy,
+		"status":         healthStatus,
+		"uptime_seconds": uptime.Seconds(),
+		"uptime_human":   uptime.String(),
+		"started_at":     serverStartTime,
+		"current_time":   time.Now(),
+		"version":        "2.0.0",
+		"environment":    "production",
+	}
+
+	c.JSON(200, APIResponse{
+		StatusCode: 200,
+		Message:    "Uptime status retrieved successfully",
+		Success:    true,
+		Data:       status,
+	})
+}
+
 func main() {
 	// Initialize database
 	if err := initDatabase(); err != nil {
@@ -1848,11 +2564,14 @@ func main() {
 	// Initialize Gin router
 	r := gin.Default()
 
+	// Add monitoring middleware (for all requests)
+	r.Use(monitoringMiddleware())
+
 	// Add CORS middleware
 	r.Use(func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key")
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
@@ -1868,33 +2587,53 @@ func main() {
 		// System
 		api.GET("/health", healthCheck)
 
-		// Packages
-		api.GET("/packages", getAllPackages)
-		api.POST("/packages/search", searchPackages)
-		api.GET("/packages/stock", getPackageStock)
+		// Authentication (public endpoint)
+		api.POST("/auth/login", authLogin)
 
-		// OTP
-		api.POST("/otp/request", requestOTP)
-		api.POST("/otp/verify", verifyOTP)
+		// Monitoring endpoints (protected)
+		monitoring := api.Group("/monitoring")
+		monitoring.Use(authMiddleware())
+		{
+			monitoring.GET("/metrics", getSystemMetrics)
+			monitoring.GET("/metrics/realtime", getRealtimeMetrics)
+			monitoring.GET("/security", getSecurityMetrics)
+			monitoring.GET("/logs", getApplicationLogs)
+			monitoring.GET("/performance", getPerformanceMetrics)
+			monitoring.GET("/uptime", getUptimeStatus)
+		}
 
-		// Purchase
-		api.POST("/purchase", purchasePackage)
+		// Protected API endpoints
+		protected := api.Group("/")
+		protected.Use(authMiddleware())
+		{
+			// Packages
+			protected.GET("/packages", getAllPackages)
+			protected.POST("/packages/search", searchPackages)
+			protected.GET("/packages/stock", getPackageStock)
 
-		// Card Management
-		api.POST("/card/status", checkCardStatus)
-		api.POST("/card/packages", checkActivePackages)
+			// OTP
+			protected.POST("/otp/request", requestOTP)
+			protected.POST("/otp/verify", verifyOTP)
 
-		// Wallet
-		api.GET("/balance", getBalance)
-		api.GET("/payment-methods", getPaymentMethods)
+			// Purchase
+			protected.POST("/purchase", purchasePackage)
 
-		// Transaction
-		api.POST("/transaction/check", checkTransaction)
+			// Card Management
+			protected.POST("/card/status", checkCardStatus)
+			protected.POST("/card/packages", checkActivePackages)
 
-		// Invoice
-		api.GET("/invoices", getInvoices)
-		api.GET("/invoices/:id", getInvoiceDetail)
-		api.GET("/invoice/stats", getInvoiceStatsHandler)
+			// Wallet
+			protected.GET("/balance", getBalance)
+			protected.GET("/payment-methods", getPaymentMethods)
+
+			// Transaction
+			protected.POST("/transaction/check", checkTransaction)
+
+			// Invoice
+			protected.GET("/invoices", getInvoices)
+			protected.GET("/invoices/:id", getInvoiceDetail)
+			protected.GET("/invoice/stats", getInvoiceStatsHandler)
+		}
 
 		// Dashboard & Monitoring
 		api.GET("/dashboard", getDashboard)
@@ -1962,12 +2701,12 @@ func main() {
 // Dashboard & Monitoring Handlers
 
 // GetDashboard godoc
-// @Summary Get dashboard data
-// @Description Get comprehensive dashboard data including stats, recent transactions, and balance
+// @Summary Get comprehensive dashboard data
+// @Description Get dashboard data including stats, recent transactions, balance, and real-time monitoring metrics
 // @Tags dashboard
 // @Accept json
 // @Produce json
-// @Success 200 {object} APIResponse
+// @Success 200 {object} APIResponse{data=DashboardData}
 // @Failure 500 {object} APIResponse
 // @Router /api/dashboard [get]
 func getDashboard(c *gin.Context) {
@@ -1980,10 +2719,33 @@ func getDashboard(c *gin.Context) {
 		json.Unmarshal(body, &balance)
 	}
 
-	// Determine system status
+	// Get system metrics for monitoring
+	systemMetrics := collectSystemMetrics()
+
+	// Get performance metrics
+	responseTimeMetrics := calculateResponseTimeMetrics()
+
+	// Get security metrics
+	securityMutex.RLock()
+	recentThreats := append([]SecurityThreat{}, securityThreats...)
+	securityMutex.RUnlock()
+
+	metricsMutex.RLock()
+	uptime := time.Since(serverStartTime).Seconds()
+	throughput := float64(totalRequests) / uptime
+	errorRate := float64(0)
+	if totalRequests > 0 {
+		errorRate = float64(totalErrors) / float64(totalRequests) * 100
+	}
+	metricsMutex.RUnlock()
+
+	// Determine system status based on metrics
 	systemStatus := "OPERATIONAL"
-	if err != nil {
+	if err != nil || systemMetrics.CPUUsage > 80 || systemMetrics.MemoryUsage.UsedPercent > 90 {
 		systemStatus = "DEGRADED"
+	}
+	if systemMetrics.CPUUsage > 95 || systemMetrics.MemoryUsage.UsedPercent > 95 {
+		systemStatus = "CRITICAL"
 	}
 
 	dashboardData := DashboardData{
@@ -1994,6 +2756,36 @@ func getDashboard(c *gin.Context) {
 		SourceBreakdown:    getSourceStats(),
 		Balance:            balance,
 		SystemStatus:       systemStatus,
+		// Add monitoring data
+		MonitoringData: map[string]interface{}{
+			"system_metrics": map[string]interface{}{
+				"cpu_usage":      systemMetrics.CPUUsage,
+				"memory_usage":   systemMetrics.MemoryUsage.UsedPercent,
+				"disk_usage":     systemMetrics.DiskUsage.UsedPercent,
+				"uptime_seconds": uptime,
+				"uptime_human":   time.Since(serverStartTime).String(),
+			},
+			"performance_metrics": map[string]interface{}{
+				"response_time_avg": responseTimeMetrics.Average,
+				"response_time_p95": responseTimeMetrics.P95,
+				"throughput_rps":    throughput,
+				"error_rate":        errorRate,
+				"total_requests":    totalRequests,
+				"total_errors":      totalErrors,
+			},
+			"security_metrics": map[string]interface{}{
+				"unauthorized_attempts": unauthorizedCount,
+				"suspicious_traffic":    suspiciousTraffic,
+				"recent_threats_count":  len(recentThreats),
+				"recent_threats":        recentThreats,
+			},
+			"service_health": map[string]interface{}{
+				"status":          systemStatus,
+				"database_status": getDatabaseStatus(),
+				"api_status":      "ONLINE",
+				"last_check":      time.Now(),
+			},
+		},
 	}
 
 	c.JSON(200, APIResponse{
