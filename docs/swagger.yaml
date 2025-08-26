@@ -577,6 +577,50 @@ paths:
       summary: Get comprehensive dashboard data
       tags:
       - dashboard
+  /api/export/invoices:
+    get:
+      consumes:
+      - application/json
+      description: Export invoices data to CSV format
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: CSV file
+          schema:
+            type: file
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
+      summary: Export invoices to CSV
+      tags:
+      - export
+  /api/export/transactions:
+    get:
+      consumes:
+      - application/json
+      description: Export transactions data to CSV format
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: CSV file
+          schema:
+            type: file
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
+      summary: Export transactions to CSV
+      tags:
+      - export
   /api/health:
     get:
       consumes:
@@ -1018,6 +1062,28 @@ paths:
       summary: Purchase a package with access token
       tags:
       - purchase
+  /api/stats/daily:
+    get:
+      consumes:
+      - application/json
+      description: Get daily statistics for transactions including counts and amounts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
+      summary: Get daily transaction statistics
+      tags:
+      - analytics
   /api/transaction/check:
     post:
       consumes:
@@ -1051,6 +1117,58 @@ paths:
       summary: Check transaction status
       tags:
       - transaction
+  /api/transactions:
+    get:
+      consumes:
+      - application/json
+      description: Get transactions with optional filters like status, source, date
+        range, and limit
+      parameters:
+      - default: 100
+        description: Limit number of results
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by status (SUCCESS, FAILED, PENDING)
+        in: query
+        name: status
+        type: string
+      - description: Filter by source (whatsapp_bot, etc)
+        in: query
+        name: source
+        type: string
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: to
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/models.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/models.TransactionRecord'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
+      summary: Get transactions with filters
+      tags:
+      - transactions
   /api/transactions/{id}:
     get:
       consumes:

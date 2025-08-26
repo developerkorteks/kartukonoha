@@ -1,7 +1,10 @@
 package middleware
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"strings"
 	"time"
@@ -91,9 +94,27 @@ func MonitoringMiddleware() gin.HandlerFunc {
 		}
 		monitoring.AddRequestMetric(metric)
 
-		log.Printf("[%s] %s %s - %d - %.2fms - %s",
+		// Extract source from request body if available
+		source := "unknown"
+		if c.Request.Method == "POST" {
+			// Try to extract source from request body
+			if bodyBytes, err := io.ReadAll(c.Request.Body); err == nil {
+				c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+				var requestData map[string]interface{}
+				if json.Unmarshal(bodyBytes, &requestData) == nil {
+					if sourceValue, exists := requestData["source"]; exists {
+						if sourceStr, ok := sourceValue.(string); ok {
+							source = sourceStr
+						}
+					}
+				}
+				c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+			}
+		}
+
+		log.Printf("[%s] %s %s - %d - %.2fms - %s - Source: %s",
 			c.Request.Method, c.Request.URL.Path, c.ClientIP(),
-			c.Writer.Status(), responseTime, c.Request.UserAgent())
+			c.Writer.Status(), responseTime, c.Request.UserAgent(), source)
 	}
 }
 

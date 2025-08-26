@@ -116,11 +116,19 @@ func main() {
 
 			// Transaction
 			protected.POST("/transaction/check", httpHandler.CheckTransaction)
+			protected.GET("/transactions", httpHandler.GetTransactions)
 
 			// Invoice
 			protected.GET("/invoices", httpHandler.GetInvoices)
 			protected.GET("/invoices/:id", httpHandler.GetInvoiceDetail)
 			protected.GET("/invoice/stats", httpHandler.GetInvoiceStatsHandler)
+
+			// Analytics
+			protected.GET("/stats/daily", httpHandler.GetDailyStats)
+
+			// Export
+			protected.GET("/export/transactions", httpHandler.ExportTransactions)
+			protected.GET("/export/invoices", httpHandler.ExportInvoices)
 		}
 
 		// Dashboard & other data endpoints (publicly accessible data, but might need auth in real life)
@@ -145,7 +153,7 @@ func serveStatic(r *gin.Engine) {
 
 	r.GET("/dashboard", func(c *gin.Context) {
 		c.Header("Content-Type", "text/html")
-		c.File("dashboard_enhanced.html")
+		c.File("dashboard_complete.html")
 	})
 
 	r.GET("/dashboard/old", func(c *gin.Context) {
@@ -159,4 +167,9 @@ func serveStatic(r *gin.Engine) {
 	})
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	
+	// Serve favicon
+	r.GET("/favicon.ico", func(c *gin.Context) {
+		c.File("favicon.ico")
+	})
 }

@@ -55,6 +55,16 @@
             color: white;
         }
         
+        .status-down {
+            background: #F44336;
+            color: white;
+        }
+        
+        .status-degraded {
+            background: #FF9800;
+            color: white;
+        }
+        
         .nav-buttons {
             margin-top: 20px;
             display: flex;
@@ -197,6 +207,51 @@
             position: relative;
             height: 350px;
             margin-top: 20px;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+        
+        .metric-title {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .metric-unit {
+            font-size: 0.8rem;
+            color: #999;
+            font-weight: 500;
         }
         
         .table-container {
@@ -587,7 +642,28 @@
             </div>
             <div class="card">
                 <h3>📊 Performance Metrics</h3>
-                <div id="performanceMetrics" class="loading">Loading metrics...</div>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-title">Response Time</div>
+                        <div class="metric-value" id="avgResponseTime">Loading...</div>
+                        <div class="metric-unit">ms</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Throughput</div>
+                        <div class="metric-value" id="throughput">Loading...</div>
+                        <div class="metric-unit">req/s</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">CPU Usage</div>
+                        <div class="metric-value" id="cpuUsage">Loading...</div>
+                        <div class="metric-unit">%</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Memory Usage</div>
+                        <div class="metric-value" id="memoryUsage">Loading...</div>
+                        <div class="metric-unit">MB</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -625,10 +701,25 @@
             }
         }
         
+        // API configuration
+        const API_KEY = 'nadia-admin-2024-secure-key';
+        
+        // Helper function for authenticated fetch
+        async function authenticatedFetch(url, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'X-API-Key': API_KEY,
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                }
+            };
+            return fetch(url, { ...options, ...defaultOptions });
+        }
+
         // Dashboard data fetching
         async function fetchDashboardData() {
             try {
-                const response = await fetch('/api/dashboard');
+                const response = await authenticatedFetch('/api/dashboard');
                 const data = await response.json();
                 
                 if (data.success) {
@@ -891,7 +982,7 @@
         
         async function refreshTransactions() {
             try {
-                const response = await fetch('/api/transactions?limit=50');
+                const response = await authenticatedFetch('/api/transactions?limit=50');
                 const data = await response.json();
                 
                 if (data.success) {
@@ -904,7 +995,7 @@
         
         async function refreshInvoices() {
             try {
-                const response = await fetch('/api/invoices?limit=50');
+                const response = await authenticatedFetch('/api/invoices?limit=50');
                 const data = await response.json();
                 
                 if (data.success) {
@@ -939,14 +1030,17 @@
             if (toDate) url += `&to=${toDate}`;
             
             try {
-                const response = await fetch(url);
+                const response = await authenticatedFetch(url);
                 const data = await response.json();
                 
-                if (data.success) {
-                    updateTransactions(data.data.transactions);
+                if (data.success && data.data) {
+                    updateTransactions(data.data);
+                } else {
+                    updateTransactions([]);
                 }
             } catch (error) {
                 console.error('Error applying transaction filters:', error);
+                updateTransactions([]);
             }
         }
         
@@ -958,7 +1052,7 @@
             if (search) url += `&search=${encodeURIComponent(search)}`;
             
             try {
-                const response = await fetch(url);
+                const response = await authenticatedFetch(url);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -979,7 +1073,7 @@
         }
         
         // Export functions
-        function exportTransactions() {
+        async function exportTransactions() {
             const status = document.getElementById('statusFilter').value;
             const source = document.getElementById('sourceFilter').value;
             const fromDate = document.getElementById('fromDate').value;
@@ -993,10 +1087,28 @@
             if (toDate) params.push(`to=${toDate}`);
             
             url += params.join('&');
-            window.open(url, '_blank');
+            
+            try {
+                const response = await authenticatedFetch(url);
+                const csvData = await response.text();
+                
+                // Create and download the file
+                const blob = new Blob([csvData], { type: 'text/csv' });
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = 'transactions.csv';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+            } catch (error) {
+                console.error('Error exporting transactions:', error);
+                alert('Failed to export transactions');
+            }
         }
         
-        function exportInvoices() {
+        async function exportInvoices() {
             const status = document.getElementById('invoiceStatusFilter').value;
             const search = document.getElementById('invoiceSearchFilter').value;
             const fromDate = document.getElementById('invoiceFromDate').value;
@@ -1010,18 +1122,38 @@
             if (toDate) params.push(`to=${toDate}`);
             
             url += params.join('&');
-            window.open(url, '_blank');
+            
+            try {
+                const response = await authenticatedFetch(url);
+                const csvData = await response.text();
+                
+                // Create and download the file
+                const blob = new Blob([csvData], { type: 'text/csv' });
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = 'invoices.csv';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+            } catch (error) {
+                console.error('Error exporting invoices:', error);
+                alert('Failed to export invoices');
+            }
         }
         
         // Analytics functions
         async function loadAnalytics() {
             // Load transaction analytics
             try {
-                const response = await fetch('/api/stats/daily');
+                const response = await authenticatedFetch('/api/stats/daily');
                 const data = await response.json();
                 
-                if (data.success) {
+                if (data.success && data.data) {
                     updateTransactionChart(data.data);
+                } else {
+                    console.log('No transaction analytics data available');
                 }
             } catch (error) {
                 console.error('Error loading transaction analytics:', error);
@@ -1029,15 +1161,20 @@
             
             // Load invoice analytics
             try {
-                const response = await fetch('/api/invoice/stats');
+                const response = await authenticatedFetch('/api/invoice/stats');
                 const data = await response.json();
                 
-                if (data.success) {
+                if (data.success && data.data && data.data.stats) {
                     updateInvoiceChart(data.data.stats);
+                } else {
+                    console.log('No invoice analytics data available');
                 }
             } catch (error) {
                 console.error('Error loading invoice analytics:', error);
             }
+            
+            // Load performance metrics
+            loadPerformanceMetrics();
         }
         
         function updateTransactionChart(dailyStats) {
@@ -1047,9 +1184,18 @@
                 transactionChart.destroy();
             }
             
-            const dates = Object.keys(dailyStats).sort();
-            const successData = dates.map(date => dailyStats[date].SUCCESS || 0);
-            const failedData = dates.map(date => dailyStats[date].FAILED || 0);
+            // Handle the daily_stats array format
+            let chartData = [];
+            if (dailyStats && dailyStats.daily_stats) {
+                chartData = dailyStats.daily_stats;
+            } else if (Array.isArray(dailyStats)) {
+                chartData = dailyStats;
+            }
+            
+            const dates = chartData.map(item => item.date);
+            const successData = chartData.map(item => item.successful || 0);
+            const failedData = chartData.map(item => item.failed || 0);
+            const pendingData = chartData.map(item => item.pending || 0);
             
             transactionChart = new Chart(ctx, {
                 type: 'line',
@@ -1060,13 +1206,22 @@
                         data: successData,
                         borderColor: '#4CAF50',
                         backgroundColor: 'rgba(76, 175, 80, 0.1)',
-                        tension: 0.4
+                        tension: 0.4,
+                        fill: true
                     }, {
                         label: 'Failed',
                         data: failedData,
                         borderColor: '#f44336',
                         backgroundColor: 'rgba(244, 67, 54, 0.1)',
-                        tension: 0.4
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Pending',
+                        data: pendingData,
+                        borderColor: '#FF9800',
+                        backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                        tension: 0.4,
+                        fill: true
                     }]
                 },
                 options: {
@@ -1150,7 +1305,7 @@
         // Invoice detail view
         async function viewInvoiceDetail(invoiceId) {
             try {
-                const response = await fetch(`/api/invoices/${invoiceId}`);
+                const response = await authenticatedFetch(`/api/invoices/${invoiceId}`);
                 const data = await response.json();
                 
                 if (data.success) {
@@ -1168,18 +1323,101 @@
         // Show invoice statistics
         async function showInvoiceStats() {
             try {
-                const response = await fetch('/api/invoice/stats');
+                const response = await authenticatedFetch('/api/invoice/stats');
                 const data = await response.json();
                 
-                if (data.success) {
+                if (data.success && data.data && data.data.stats) {
                     const stats = data.data.stats;
                     alert(`Invoice Statistics:\n\nTotal Invoices: ${stats.total_invoices}\nPaid: ${stats.paid_invoices}\nUnpaid: ${stats.unpaid_invoices}\nPending: ${stats.pending_invoices}\nPayment Rate: ${stats.payment_rate.toFixed(1)}%\nTotal Revenue: Rp ${stats.total_revenue.toLocaleString()}`);
+                } else {
+                    alert('No invoice statistics available');
                 }
             } catch (error) {
                 console.error('Error loading invoice stats:', error);
             }
         }
         
+        // Helper functions for better data handling
+        function updateAnalyticsDisplay(dailyStats) {
+            console.log('Updating analytics display with:', dailyStats);
+            // You can add more sophisticated analytics display here
+        }
+
+        function updateInvoiceAnalyticsDisplay(stats) {
+            console.log('Updating invoice analytics display with:', stats);
+            // You can add more sophisticated invoice analytics display here
+        }
+
+        // Enhanced error handling
+        function handleApiError(error, context) {
+            console.error(`Error in ${context}:`, error);
+            // You can add user-friendly error notifications here
+        }
+
+        // Production-ready monitoring display
+        function updateMonitoringStatus(isHealthy) {
+            const statusElement = document.querySelector('.status-indicator');
+            if (statusElement) {
+                if (isHealthy) {
+                    statusElement.className = 'status-indicator status-operational';
+                    statusElement.textContent = 'Operational';
+                } else {
+                    statusElement.className = 'status-indicator status-degraded';
+                    statusElement.textContent = 'Issues Detected';
+                }
+            }
+        }
+
+        // Load performance metrics
+        async function loadPerformanceMetrics() {
+            try {
+                const response = await authenticatedFetch('/api/monitoring/performance');
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const metrics = data.data;
+                    
+                    // Update metric cards
+                    document.getElementById('avgResponseTime').textContent = 
+                        metrics.response_time ? metrics.response_time.average_ms.toFixed(2) : '0.00';
+                    
+                    document.getElementById('throughput').textContent = 
+                        metrics.throughput_rps ? metrics.throughput_rps.toFixed(3) : '0.000';
+                    
+                    document.getElementById('cpuUsage').textContent = 
+                        metrics.cpu_usage ? metrics.cpu_usage.toFixed(1) : '0.0';
+                    
+                    document.getElementById('memoryUsage').textContent = 
+                        metrics.memory ? metrics.memory.alloc_mb.toFixed(1) : '0.0';
+                } else {
+                    console.log('No performance metrics available');
+                }
+            } catch (error) {
+                console.error('Error loading performance metrics:', error);
+                // Set fallback values
+                document.getElementById('avgResponseTime').textContent = 'N/A';
+                document.getElementById('throughput').textContent = 'N/A';
+                document.getElementById('cpuUsage').textContent = 'N/A';
+                document.getElementById('memoryUsage').textContent = 'N/A';
+            }
+        }
+
+        // Auto-refresh with better error handling
+        function startAutoRefresh() {
+            setInterval(async () => {
+                try {
+                    await refreshDashboard();
+                    if (document.getElementById('analytics-tab').style.display !== 'none') {
+                        loadPerformanceMetrics();
+                    }
+                    updateMonitoringStatus(true);
+                } catch (error) {
+                    handleApiError(error, 'auto-refresh');
+                    updateMonitoringStatus(false);
+                }
+            }, 30000); // Refresh every 30 seconds
+        }
+
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
             refreshDashboard();

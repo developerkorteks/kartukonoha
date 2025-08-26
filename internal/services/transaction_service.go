@@ -259,3 +259,164 @@ func (s *TransactionService) GetTransactionDetail(id string) (*models.Transactio
 	tx, exists := s.transactions[id]
 	return tx, exists
 }
+
+// GetTransactionsWithFilters retrieves transactions with optional filters
+func (s *TransactionService) GetTransactionsWithFilters(limit int, status, source, from, to string) ([]models.TransactionRecord, error) {
+	txList, err := database.GetAllTransactionsFromDB(s.db, 0) // Get all first
+	if err != nil {
+		log.Printf("Failed to get transactions from DB: %v", err)
+		return nil, err
+	}
+
+	var filtered []models.TransactionRecord
+	
+	for _, tx := range txList {
+		// Apply filters
+		if status != "" && tx.Status != status {
+			continue
+		}
+		if source != "" && tx.Source != source {
+			continue
+		}
+		if from != "" {
+			fromTime, err := time.Parse("2006-01-02", from)
+			if err == nil && tx.CreatedAt.Before(fromTime) {
+				continue
+			}
+		}
+		if to != "" {
+			toTime, err := time.Parse("2006-01-02", to)
+			if err == nil && tx.CreatedAt.After(toTime.Add(24*time.Hour)) {
+				continue
+			}
+		}
+		
+		filtered = append(filtered, *tx)
+	}
+
+	// Sort by created time (newest first)
+	for i := 0; i < len(filtered)-1; i++ {
+		for j := i + 1; j < len(filtered); j++ {
+			if filtered[i].CreatedAt.Before(filtered[j].CreatedAt) {
+				filtered[i], filtered[j] = filtered[j], filtered[i]
+			}
+		}
+	}
+
+	// Apply limit
+	if limit > 0 && len(filtered) > limit {
+		filtered = filtered[:limit]
+	}
+
+	return filtered, nil
+}
+
+// GetDailyStats retrieves daily transaction statistics
+func (s *TransactionService) GetDailyStats() (map[string]interface{}, error) {
+	txList, err := database.GetAllTransactionsFromDB(s.db, 0)
+	if err != nil {
+		log.Printf("Failed to get transactions from DB: %v", err)
+		return nil, err
+	}
+
+	dailyStats := make(map[string]map[string]interface{})
+	
+	for _, tx := range txList {
+		dateKey := tx.CreatedAt.Format("2006-01-02")
+		
+		if _, exists := dailyStats[dateKey]; !exists {
+			dailyStats[dateKey] = map[string]interface{}{
+				"date":        dateKey,
+				"total":       0,
+				"successful":  0,
+				"failed":      0,
+				"pending":     0,
+				"revenue":     0,
+			}
+		}
+		
+		dailyStats[dateKey]["total"] = dailyStats[dateKey]["total"].(int) + 1
+		
+		switch tx.Status {
+		case "SUCCESS":
+			dailyStats[dateKey]["successful"] = dailyStats[dateKey]["successful"].(int) + 1
+			dailyStats[dateKey]["revenue"] = dailyStats[dateKey]["revenue"].(int) + tx.Amount
+		case "FAILED":
+			dailyStats[dateKey]["failed"] = dailyStats[dateKey]["failed"].(int) + 1
+		case "PENDING":
+			dailyStats[dateKey]["pending"] = dailyStats[dateKey]["pending"].(int) + 1
+		}
+	}
+
+	// Convert to slice for easier consumption
+	var result []map[string]interface{}
+	for _, stats := range dailyStats {
+		result = append(result, stats)
+	}
+
+	return map[string]interface{}{
+		"daily_stats": result,
+		"total_days":  len(result),
+	}, nil
+}
+
+// GetAllTransactions retrieves all transactions for export
+func (s *TransactionService) GetAllTransactions() ([]models.TransactionRecord, error) {
+	txList, err := database.GetAllTransactionsFromDB(s.db, 0)
+	if err != nil {
+		log.Printf("Failed to get all transactions from DB: %v", err)
+		return nil, err
+	}
+
+	var result []models.TransactionRecord
+	for _, tx := range txList {
+		result = append(result, *tx)
+	}
+	return result, nil
+}
+
+// GetAllInvoices retrieves all invoices for export (using transactions as invoices)
+func (s *TransactionService) GetAllInvoices() ([]models.TransactionRecord, error) {
+	// For now, invoices are the same as transactions
+	// In a real system, you might have a separate invoices table
+	return s.GetAllTransactions()
+}
+
+// GetInvoiceStats retrieves invoice statistics (using transactions as invoices)
+func (s *TransactionService) GetInvoiceStats() (models.InvoiceStats, error) {
+	txList, err := database.GetAllTransactionsFromDB(s.db, 0)
+	if err != nil {
+		log.Printf("Failed to get transactions from DB for invoice stats: %v", err)
+		return models.InvoiceStats{}, err
+	}
+
+	var totalInvoices, paidInvoices, unpaidInvoices, pendingInvoices, totalRevenue int
+
+	for _, tx := range txList {
+		totalInvoices++
+		switch tx.Status {
+		case "SUCCESS":
+			paidInvoices++
+			totalRevenue += tx.Amount
+		case "FAILED":
+			unpaidInvoices++
+		case "PENDING":
+			pendingInvoices++
+		}
+	}
+
+	paymentRate := 0.0
+	if totalInvoices > 0 {
+		paymentRate = float64(paidInvoices) / float64(totalInvoices) * 100
+	}
+
+	return models.InvoiceStats{
+		TotalInvoices:   totalInvoices,
+		PaidInvoices:    paidInvoices,
+		UnpaidInvoices:  unpaidInvoices,
+		PendingInvoices: pendingInvoices,
+		TotalRevenue:    totalRevenue,
+		PaymentRate:     paymentRate,
+		LastUpdated:     time.Now(),
+	}, nil
+}

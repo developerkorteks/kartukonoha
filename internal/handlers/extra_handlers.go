@@ -2,12 +2,170 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nabilulilalbab/nadia/internal/models"
 )
+
+// GetTransactions godoc
+// @Summary Get transactions with filters
+// @Description Get transactions with optional filters like status, source, date range, and limit
+// @Tags transactions
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security BearerAuth
+// @Param limit query int false "Limit number of results" default(100)
+// @Param status query string false "Filter by status (SUCCESS, FAILED, PENDING)"
+// @Param source query string false "Filter by source (whatsapp_bot, etc)"
+// @Param from query string false "Start date (YYYY-MM-DD)"
+// @Param to query string false "End date (YYYY-MM-DD)"
+// @Success 200 {object} models.APIResponse{data=[]models.TransactionRecord}
+// @Failure 401 {object} models.APIResponse
+// @Router /api/transactions [get]
+func (h *HTTPHandler) GetTransactions(c *gin.Context) {
+	// Parse query parameters
+	limitStr := c.DefaultQuery("limit", "100")
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		limit = 100
+	}
+
+	status := c.Query("status")
+	source := c.Query("source")
+	from := c.Query("from")
+	to := c.Query("to")
+
+	// Get transactions from service
+	transactions, err := h.transactionService.GetTransactionsWithFilters(limit, status, source, from, to)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to retrieve transactions",
+			Success:    false,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		StatusCode: http.StatusOK,
+		Message:    "Transactions retrieved successfully",
+		Success:    true,
+		Data:       transactions,
+	})
+}
+
+// GetDailyStats godoc
+// @Summary Get daily transaction statistics
+// @Description Get daily statistics for transactions including counts and amounts
+// @Tags analytics
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Security BearerAuth
+// @Success 200 {object} models.APIResponse
+// @Failure 401 {object} models.APIResponse
+// @Router /api/stats/daily [get]
+func (h *HTTPHandler) GetDailyStats(c *gin.Context) {
+	stats, err := h.transactionService.GetDailyStats()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to retrieve daily statistics",
+			Success:    false,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		StatusCode: http.StatusOK,
+		Message:    "Daily statistics retrieved successfully",
+		Success:    true,
+		Data:       stats,
+	})
+}
+
+// ExportTransactions godoc
+// @Summary Export transactions to CSV
+// @Description Export transactions data to CSV format
+// @Tags export
+// @Accept json
+// @Produce text/csv
+// @Security ApiKeyAuth
+// @Security BearerAuth
+// @Success 200 {file} string "CSV file"
+// @Failure 401 {object} models.APIResponse
+// @Router /api/export/transactions [get]
+func (h *HTTPHandler) ExportTransactions(c *gin.Context) {
+	transactions, err := h.transactionService.GetAllTransactions()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to retrieve transactions for export",
+			Success:    false,
+		})
+		return
+	}
+
+	// Set CSV headers
+	c.Header("Content-Type", "text/csv")
+	c.Header("Content-Disposition", "attachment; filename=transactions.csv")
+
+	// Write CSV header
+	csvData := "ID,Phone,Package,Amount,Status,Source,Created At\n"
+	
+	// Write transaction data
+	for _, tx := range transactions {
+		csvData += fmt.Sprintf("%s,%s,%s,%d,%s,%s,%s\n",
+			tx.ID, tx.PhoneNumber, tx.PackageName, tx.Amount, tx.Status, tx.Source,
+			tx.CreatedAt.Format("2006-01-02 15:04:05"))
+	}
+
+	c.String(http.StatusOK, csvData)
+}
+
+// ExportInvoices godoc
+// @Summary Export invoices to CSV
+// @Description Export invoices data to CSV format
+// @Tags export
+// @Accept json
+// @Produce text/csv
+// @Security ApiKeyAuth
+// @Security BearerAuth
+// @Success 200 {file} string "CSV file"
+// @Failure 401 {object} models.APIResponse
+// @Router /api/export/invoices [get]
+func (h *HTTPHandler) ExportInvoices(c *gin.Context) {
+	invoices, err := h.transactionService.GetAllInvoices()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to retrieve invoices for export",
+			Success:    false,
+		})
+		return
+	}
+
+	// Set CSV headers
+	c.Header("Content-Type", "text/csv")
+	c.Header("Content-Disposition", "attachment; filename=invoices.csv")
+
+	// Write CSV header
+	csvData := "ID,Phone,Package,Amount,Status,Payment Method,Created At\n"
+	
+	// Write invoice data
+	for _, inv := range invoices {
+		csvData += fmt.Sprintf("%s,%s,%s,%d,%s,%s,%s\n",
+			inv.ID, inv.PhoneNumber, inv.PackageName, inv.Amount, inv.Status, inv.PaymentMethod,
+			inv.CreatedAt.Format("2006-01-02 15:04:05"))
+	}
+
+	c.String(http.StatusOK, csvData)
+}
 
 // CheckActivePackages godoc
 // @Summary Check active packages on XL card
@@ -98,7 +256,7 @@ func (h *HTTPHandler) CheckTransaction(c *gin.Context) {
 		return
 	}
 
-	payload := map[string]string{"transaction_id": req.TransactionID}
+	payload := map[string]string{"trx_id": req.TransactionID}
 	resp, err := h.nadiaService.MakeRequest("POST", "/limited/xl/check-transaction.json", payload)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{StatusCode: http.StatusInternalServerError, Message: "Failed to check transaction: " + err.Error(), Success: false})
@@ -210,5 +368,23 @@ func (h *HTTPHandler) GetInvoiceDetail(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Security BearerAuth
 func (h *HTTPHandler) GetInvoiceStatsHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, models.APIResponse{StatusCode: http.StatusOK, Message: "Invoice endpoint not fully implemented in this refactor.", Success: true})
+	// Get invoice stats from transaction service (using transactions as invoices)
+	stats, err := h.transactionService.GetInvoiceStats()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to retrieve invoice statistics",
+			Success:    false,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		StatusCode: http.StatusOK,
+		Message:    "Invoice statistics retrieved successfully",
+		Success:    true,
+		Data: map[string]interface{}{
+			"stats": stats,
+		},
+	})
 }

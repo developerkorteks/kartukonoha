@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nadia API - Professional Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-color: #1f2937;
+            --light-color: #f8fafc;
+            --border-color: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--dark-color);
+        }
+        
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid var(--border-color);
+            padding: 2rem 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar-header {
+            padding: 0 2rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .nav-menu {
+            list-style: none;
+            padding: 0 1rem;
+        }
+        
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: var(--dark-color);
+            text-decoration: none;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            background: var(--primary-color);
+            color: white;
+            transform: translateX(4px);
+        }
+        
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 2rem;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .header-title {
+            flex: 1;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .header-subtitle {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        
+        .status-operational {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        /* Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .grid-1 { grid-template-columns: 1fr; }
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+        
+        /* Cards */
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .card-action {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+            transition: background 0.2s ease;
+        }
+        
+        .card-action:hover {
+            background: rgba(37, 99, 235, 0.1);
+        }
+        
+        /* Metric Cards */
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(30px, -30px);
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .metric-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .metric-change {
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .metric-change.positive {
+            color: #10b981;
+        }
+        
+        .metric-change.negative {
+            color: #ef4444;
+        }
+        
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+        
+        .chart-container.large {
+            height: 400px;
+        }
+        
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .data-table th {
+            background: var(--light-color);
+            font-weight: 600;
+            color: var(--dark-color);
+            font-size: 0.875rem;
+        }
+        
+        .data-table td {
+            font-size: 0.875rem;
+        }
+        
+        .data-table tr:hover {
+            background: rgba(37, 99, 235, 0.05);
+        }
+        
+        /* Status Indicators */
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+        
+        .status-success { background: var(--success-color); }
+        .status-warning { background: var(--warning-color); }
+        .status-error { background: var(--danger-color); }
+        
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .grid-4 { grid-template-columns: repeat(2, 1fr); }
+            .grid-3 { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .grid-4,
+            .grid-3,
+            .grid-2 { 
+                grid-template-columns: 1fr; 
+            }
+            
+            .header {
+                padding: 1rem;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+        
+        /* Loading States */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Mobile Menu Button */
+        .mobile-menu-btn {
+            display: none;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1.125rem;
+        }
+        
+        @media (max-width: 1024px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Nadia API</span>
+                </div>
+            </div>
+            
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link active" data-section="overview">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Overview</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-section="analytics">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Analytics</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-section="monitoring">
+                            <i class="fas fa-desktop"></i>
+                            <span>System Monitor</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-section="logs">
+                            <i class="fas fa-list-alt"></i>
+                            <span>System Logs</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-section="transactions">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span>Transactions</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-section="security">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Security</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <button class="mobile-menu-btn" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <div class="header-title">
+                    <h1>Dashboard Overview</h1>
+                    <p class="header-subtitle">Real-time monitoring and analytics for Nadia API</p>
+                </div>
+                
+                <div class="status-badge status-operational" id="systemStatus">
+                    <i class="fas fa-check-circle"></i>
+                    <span>All Systems Operational</span>
+                </div>
+            </header>
+
+            <!-- Overview Section -->
+            <section id="overview-section" class="dashboard-section">
+                <!-- Key Metrics -->
+                <div class="dashboard-grid grid-4">
+                    <div class="metric-card">
+                        <div class="metric-value" id="totalTransactions">0</div>
+                        <div class="metric-label">Total Transactions</div>
+                        <div class="metric-change positive" id="transactionChange">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-value" id="successRate">0%</div>
+                        <div class="metric-label">Success Rate</div>
+                        <div class="metric-change positive" id="successRateChange">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-value" id="responseTime">0ms</div>
+                        <div class="metric-label">Avg Response Time</div>
+                        <div class="metric-change" id="responseTimeChange">
+                            <i class="fas fa-arrow-down"></i>
+                            <span>Loading...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-value" id="totalRevenue">Rp 0</div>
+                        <div class="metric-label">Total Revenue</div>
+                        <div class="metric-change positive" id="revenueChange">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>Loading...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="dashboard-grid grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-line"></i>
+                                Transaction Trends
+                            </h3>
+                            <button class="card-action" onclick="refreshTransactionChart()">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="transactionTrendChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-server"></i>
+                                System Performance
+                            </h3>
+                            <button class="card-action" onclick="refreshPerformanceChart()">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="performanceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- System Monitoring Section -->
+            <section id="monitoring-section" class="dashboard-section" style="display: none;">
+                <div class="dashboard-grid grid-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-microchip"></i>
+                                CPU Usage
+                            </h3>
+                        </div>
+                        <div style="text-align: center; margin-top: 2rem;">
+                            <span id="cpuValue" style="font-size: 3rem; font-weight: bold; color: var(--primary-color);">0%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-memory"></i>
+                                Memory Usage
+                            </h3>
+                        </div>
+                        <div style="text-align: center; margin-top: 2rem;">
+                            <span id="memoryValue" style="font-size: 3rem; font-weight: bold; color: var(--success-color);">0 MB</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-network-wired"></i>
+                                Network Activity
+                            </h3>
+                        </div>
+                        <div style="text-align: center; margin-top: 2rem;">
+                            <span id="networkValue" style="font-size: 2rem; font-weight: bold; color: var(--warning-color);">0 req/s</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Real-time Metrics -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Real-time System Metrics
+                        </h3>
+                        <button class="card-action" onclick="refreshSystemMetrics()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div class="dashboard-grid grid-4" style="margin-top: 1rem;">
+                        <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 0.5rem;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);" id="uptimeValue">0s</div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">Uptime</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 0.5rem;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: var(--success-color);" id="throughputValue">0</div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">Throughput (req/s)</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 0.5rem;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: var(--warning-color);" id="errorRateValue">0%</div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">Error Rate</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: #f8fafc; border-radius: 0.5rem;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: var(--danger-color);" id="activeConnectionsValue">0</div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">Active Connections</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- System Logs Section -->
+            <section id="logs-section" class="dashboard-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-list-alt"></i>
+                            System Logs
+                        </h3>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="card-action" onclick="refreshLogs()">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="card-action" onclick="clearLogs()">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div style="max-height: 500px; overflow-y: auto; background: #1f2937; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem;">
+                        <div id="logContainer" style="font-family: 'Courier New', monospace; font-size: 0.875rem; color: #e5e7eb;">
+                            <div class="log-entry">
+                                <span style="color: #10b981;">[INFO]</span>
+                                <span style="color: #6b7280;">Loading logs...</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Log Statistics -->
+                    <div class="dashboard-grid grid-4" style="margin-top: 1rem;">
+                        <div style="text-align: center; padding: 1rem; background: #dcfce7; border-radius: 0.5rem;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #166534;" id="infoLogsCount">0</div>
+                            <div style="font-size: 0.875rem; color: #166534;">Info Logs</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: #fef3c7; border-radius: 0.5rem;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #92400e;" id="warningLogsCount">0</div>
+                            <div style="font-size: 0.875rem; color: #92400e;">Warning Logs</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: #fee2e2; border-radius: 0.5rem;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #991b1b;" id="errorLogsCount">0</div>
+                            <div style="font-size: 0.875rem; color: #991b1b;">Error Logs</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: #e0e7ff; border-radius: 0.5rem;">
+                            <div style="font-size: 1.5rem; font-weight: bold; color: #3730a3;" id="totalLogsCount">0</div>
+                            <div style="font-size: 0.875rem; color: #3730a3;">Total Logs</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section id="analytics-section" class="dashboard-section" style="display: none;">
+                <div class="dashboard-grid grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-area"></i>
+                                Daily Transaction Analytics
+                            </h3>
+                        </div>
+                        <div class="chart-container large">
+                            <canvas id="dailyAnalyticsChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-pie"></i>
+                                Transaction Status Distribution
+                            </h3>
+                        </div>
+                        <div class="chart-container large">
+                            <canvas id="statusDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Transactions Section -->
+            <section id="transactions-section" class="dashboard-section" style="display: none;">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-exchange-alt"></i>
+                            Recent Transactions
+                        </h3>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <select id="sourceFilter" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.25rem;" onchange="applyTransactionFilters()">
+                                <option value="">All Sources</option>
+                                <option value="telegram_bot">Telegram Bot</option>
+                                <option value="whatsapp_bot">WhatsApp Bot</option>
+                                <option value="web_dashboard">Web Dashboard</option>
+                                <option value="api_direct">API Direct</option>
+                            </select>
+                            <select id="statusFilter" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 0.25rem;" onchange="applyTransactionFilters()">
+                                <option value="">All Status</option>
+                                <option value="SUCCESS">Success</option>
+                                <option value="FAILED">Failed</option>
+                                <option value="PENDING">Pending</option>
+                            </select>
+                            <button class="card-action" onclick="refreshTransactions()">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="card-action" onclick="exportTransactions()">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div style="overflow-x: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Phone</th>
+                                    <th>Package</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Source</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsTableBody">
+                                <tr>
+                                    <td colspan="7" style="text-align: center; padding: 2rem;">Loading transactions...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Security Section -->
+            <section id="security-section" class="dashboard-section" style="display: none;">
+                <div class="dashboard-grid grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-shield-alt"></i>
+                                Security Overview
+                            </h3>
+                        </div>
+                        <div class="dashboard-grid grid-2" style="margin-top: 1rem;">
+                            <div style="text-align: center; padding: 1rem; background: #fee2e2; border-radius: 0.5rem;">
+                                <div style="font-size: 2rem; font-weight: bold; color: #991b1b;" id="unauthorizedAttempts">0</div>
+                                <div style="font-size: 0.875rem; color: #991b1b;">Unauthorized Attempts</div>
+                            </div>
+                            <div style="text-align: center; padding: 1rem; background: #fef3c7; border-radius: 0.5rem;">
+                                <div style="font-size: 2rem; font-weight: bold; color: #92400e;" id="suspiciousTraffic">0</div>
+                                <div style="font-size: 0.875rem; color: #92400e;">Suspicious Traffic</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Recent Security Events
+                            </h3>
+                        </div>
+                        <div id="securityEvents" style="max-height: 300px; overflow-y: auto;">
+                            <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                                <i class="fas fa-check-circle" style="font-size: 3rem; color: #10b981; margin-bottom: 1rem;"></i>
+                                <div>No security threats detected</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_KEY = 'nadia-admin-2024-secure-key';
+        
+        // Global variables for charts
+        let charts = {};
+        
+        // Helper function for authenticated fetch
+        async function authenticatedFetch(url, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'X-API-Key': API_KEY,
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                }
+            };
+            return fetch(url, { ...options, ...defaultOptions });
+        }
+
+        // Navigation functionality
+        function initNavigation() {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('.dashboard-section');
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                    
+                    sections.forEach(section => section.style.display = 'none');
+                    
+                    const sectionId = link.dataset.section + '-section';
+                    const targetSection = document.getElementById(sectionId);
+                    if (targetSection) {
+                        targetSection.style.display = 'block';
+                        
+                        const headerTitle = document.querySelector('.header h1');
+                        const sectionName = link.querySelector('span').textContent;
+                        headerTitle.textContent = sectionName;
+                    }
+                    
+                    loadSectionData(link.dataset.section);
+                });
+            });
+        }
+
+        // Load data based on section
+        async function loadSectionData(section) {
+            switch(section) {
+                case 'overview':
+                    await loadOverviewData();
+                    break;
+                case 'monitoring':
+                    await loadMonitoringData();
+                    break;
+                case 'logs':
+                    await loadSystemLogs();
+                    break;
+                case 'analytics':
+                    await loadAnalyticsData();
+                    break;
+                case 'transactions':
+                    await loadTransactionsData();
+                    break;
+                case 'security':
+                    await loadSecurityData();
+                    break;
+            }
+        }
+
+        // Load overview data with real API calls
+        async function loadOverviewData() {
+            try {
+                // Load dashboard data
+                const dashboardResponse = await authenticatedFetch('/api/dashboard');
+                const dashboardData = await dashboardResponse.json();
+                
+                if (dashboardData.success && dashboardData.data) {
+                    const data = dashboardData.data;
+                    
+                    // Update metrics with real data
+                    document.getElementById('totalTransactions').textContent = data.stats?.total_transactions || 0;
+                    document.getElementById('successRate').textContent = (data.stats?.success_rate || 0).toFixed(1) + '%';
+                    document.getElementById('totalRevenue').textContent = 'Rp ' + (data.stats?.total_revenue || 0).toLocaleString();
+                    
+                    // Update change indicators based on real data
+                    const successRate = data.stats?.success_rate || 0;
+                    const successRateChange = document.getElementById('successRateChange');
+                    if (successRate >= 95) {
+                        successRateChange.className = 'metric-change positive';
+                        successRateChange.innerHTML = '<i class="fas fa-arrow-up"></i><span>Excellent</span>';
+                    } else if (successRate >= 80) {
+                        successRateChange.className = 'metric-change';
+                        successRateChange.innerHTML = '<i class="fas fa-minus"></i><span>Good</span>';
+                    } else {
+                        successRateChange.className = 'metric-change negative';
+                        successRateChange.innerHTML = '<i class="fas fa-arrow-down"></i><span>Needs Attention</span>';
+                    }
+                }
+                
+                // Load performance data
+                const perfResponse = await authenticatedFetch('/api/monitoring/performance');
+                const perfData = await perfResponse.json();
+                
+                if (perfData.success && perfData.data) {
+                    const avgResponseTime = perfData.data.response_time?.average_ms || 0;
+                    document.getElementById('responseTime').textContent = avgResponseTime.toFixed(1) + 'ms';
+                    
+                    // Update response time change indicator
+                    const responseTimeChange = document.getElementById('responseTimeChange');
+                    if (avgResponseTime < 100) {
+                        responseTimeChange.className = 'metric-change positive';
+                        responseTimeChange.innerHTML = '<i class="fas fa-arrow-down"></i><span>Fast</span>';
+                    } else if (avgResponseTime < 500) {
+                        responseTimeChange.className = 'metric-change';
+                        responseTimeChange.innerHTML = '<i class="fas fa-minus"></i><span>Normal</span>';
+                    } else {
+                        responseTimeChange.className = 'metric-change negative';
+                        responseTimeChange.innerHTML = '<i class="fas fa-arrow-up"></i><span>Slow</span>';
+                    }
+                }
+                
+                // Create charts with real data
+                await createTransactionTrendChart();
+                await createPerformanceChart();
+                await loadSourceAnalytics();
+                
+            } catch (error) {
+                console.error('Error loading overview data:', error);
+            }
+        }
+
+        // Create transaction trend chart with real data
+        async function createTransactionTrendChart() {
+            const ctx = document.getElementById('transactionTrendChart');
+            if (!ctx) return;
+            
+            try {
+                const response = await authenticatedFetch('/api/stats/daily');
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.daily_stats) {
+                    const dailyStats = data.data.daily_stats;
+                    
+                    if (charts.transactionTrend) {
+                        charts.transactionTrend.destroy();
+                    }
+                    
+                    charts.transactionTrend = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: dailyStats.map(item => item.date),
+                            datasets: [{
+                                label: 'Successful',
+                                data: dailyStats.map(item => item.successful || 0),
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }, {
+                                label: 'Failed',
+                                data: dailyStats.map(item => item.failed || 0),
+                                borderColor: '#ef4444',
+                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }, {
+                                label: 'Pending',
+                                data: dailyStats.map(item => item.pending || 0),
+                                borderColor: '#f59e0b',
+                                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { position: 'top' } },
+                            scales: { y: { beginAtZero: true } }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error creating transaction trend chart:', error);
+            }
+        }
+
+        // Create performance chart with real-time data
+        async function createPerformanceChart() {
+            const ctx = document.getElementById('performanceChart');
+            if (!ctx) return;
+            
+            try {
+                const response = await authenticatedFetch('/api/monitoring/metrics/realtime');
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.recent_requests) {
+                    const recentRequests = data.data.recent_requests.slice(-10);
+                    
+                    if (charts.performance) {
+                        charts.performance.destroy();
+                    }
+                    
+                    charts.performance = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: recentRequests.map((_, index) => `Req ${index + 1}`),
+                            datasets: [{
+                                label: 'Response Time (ms)',
+                                data: recentRequests.map(req => req.ResponseTime || 0),
+                                borderColor: '#8b5cf6',
+                                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { position: 'top' } },
+                            scales: { y: { beginAtZero: true } }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error creating performance chart:', error);
+            }
+        }
+
+        // Load monitoring data with real metrics
+        async function loadMonitoringData() {
+            try {
+                const response = await authenticatedFetch('/api/monitoring/performance');
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const metrics = data.data;
+                    
+                    // Update real-time metrics
+                    document.getElementById('cpuValue').textContent = (metrics.cpu_usage || 0).toFixed(1) + '%';
+                    document.getElementById('memoryValue').textContent = (metrics.memory?.alloc_mb || 0).toFixed(1) + ' MB';
+                    document.getElementById('networkValue').textContent = (metrics.throughput_rps || 0).toFixed(3) + ' req/s';
+                    document.getElementById('uptimeValue').textContent = formatUptime(metrics.uptime_seconds || 0);
+                    document.getElementById('throughputValue').textContent = (metrics.throughput_rps || 0).toFixed(3);
+                    document.getElementById('errorRateValue').textContent = (metrics.error_rate || 0).toFixed(1) + '%';
+                    document.getElementById('activeConnectionsValue').textContent = '1'; // Simulated
+                }
+            } catch (error) {
+                console.error('Error loading monitoring data:', error);
+            }
+        }
+
+        // Load system logs with real data
+        async function loadSystemLogs() {
+            try {
+                const response = await authenticatedFetch('/api/monitoring/logs');
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.logs) {
+                    const logContainer = document.getElementById('logContainer');
+                    logContainer.innerHTML = '';
+                    
+                    data.data.logs.forEach(log => {
+                        const logEntry = document.createElement('div');
+                        logEntry.className = 'log-entry';
+                        logEntry.style.marginBottom = '0.5rem';
+                        
+                        const level = getLogLevel(log.status_code);
+                        const levelColor = getLogLevelColor(level);
+                        
+                        logEntry.innerHTML = `
+                            <span style="color: ${levelColor};">[${level}]</span>
+                            <span style="color: #6b7280;">${new Date(log.timestamp).toLocaleString()}</span>
+                            <span>${log.method} ${log.path} - ${log.status_code} - ${log.response_time.toFixed(2)}ms - ${log.ip}</span>
+                            ${log.source ? `<span style="color: #8b5cf6;"> - Source: ${log.source}</span>` : ''}
+                        `;
+                        
+                        logContainer.appendChild(logEntry);
+                    });
+                    
+                    // Update log counts with real data
+                    const logs = data.data.logs;
+                    const infoCount = logs.filter(log => log.status_code < 400).length;
+                    const warningCount = logs.filter(log => log.status_code >= 400 && log.status_code < 500).length;
+                    const errorCount = logs.filter(log => log.status_code >= 500).length;
+                    
+                    document.getElementById('infoLogsCount').textContent = infoCount;
+                    document.getElementById('warningLogsCount').textContent = warningCount;
+                    document.getElementById('errorLogsCount').textContent = errorCount;
+                    document.getElementById('totalLogsCount').textContent = logs.length;
+                }
+            } catch (error) {
+                console.error('Error loading logs:', error);
+            }
+        }
+
+        // Load analytics data with real charts
+        async function loadAnalyticsData() {
+            try {
+                // Load daily analytics chart
+                const dailyResponse = await authenticatedFetch('/api/stats/daily');
+                const dailyData = await dailyResponse.json();
+                
+                if (dailyData.success && dailyData.data && dailyData.data.daily_stats) {
+                    createDailyAnalyticsChart(dailyData.data.daily_stats);
+                }
+                
+                // Load status distribution chart
+                const transResponse = await authenticatedFetch('/api/transactions?limit=1000');
+                const transData = await transResponse.json();
+                
+                if (transData.success && transData.data) {
+                    createStatusDistributionChart(transData.data);
+                }
+                
+            } catch (error) {
+                console.error('Error loading analytics data:', error);
+            }
+        }
+
+        // Create daily analytics chart
+        function createDailyAnalyticsChart(dailyStats) {
+            const ctx = document.getElementById('dailyAnalyticsChart');
+            if (!ctx) return;
+            
+            if (charts.dailyAnalytics) {
+                charts.dailyAnalytics.destroy();
+            }
+            
+            charts.dailyAnalytics = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: dailyStats.map(item => item.date),
+                    datasets: [{
+                        label: 'Total Transactions',
+                        data: dailyStats.map(item => item.total || 0),
+                        backgroundColor: 'rgba(37, 99, 235, 0.8)',
+                        borderColor: 'rgba(37, 99, 235, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Revenue (Rp)',
+                        data: dailyStats.map(item => item.revenue || 0),
+                        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            beginAtZero: true
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true,
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create status distribution chart
+        function createStatusDistributionChart(transactions) {
+            const ctx = document.getElementById('statusDistributionChart');
+            if (!ctx) return;
+            
+            const statusCounts = { SUCCESS: 0, FAILED: 0, PENDING: 0 };
+            transactions.forEach(tx => {
+                if (statusCounts.hasOwnProperty(tx.status)) {
+                    statusCounts[tx.status]++;
+                }
+            });
+            
+            if (charts.statusDistribution) {
+                charts.statusDistribution.destroy();
+            }
+            
+            charts.statusDistribution = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Success', 'Failed', 'Pending'],
+                    datasets: [{
+                        data: [statusCounts.SUCCESS, statusCounts.FAILED, statusCounts.PENDING],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(239, 68, 68, 0.8)',
+                            'rgba(245, 158, 11, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(239, 68, 68, 1)',
+                            'rgba(245, 158, 11, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        // Load transactions data with real API
+        async function loadTransactionsData() {
+            try {
+                const response = await authenticatedFetch('/api/transactions?limit=50');
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    displayTransactions(data.data);
+                }
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+            }
+        }
+
+        // Apply transaction filters
+        async function applyTransactionFilters() {
+            try {
+                const sourceFilter = document.getElementById('sourceFilter').value;
+                const statusFilter = document.getElementById('statusFilter').value;
+                
+                let url = '/api/transactions?limit=100';
+                const params = [];
+                
+                if (statusFilter) params.push(`status=${statusFilter}`);
+                if (sourceFilter) params.push(`source=${sourceFilter}`);
+                
+                if (params.length > 0) {
+                    url += '&' + params.join('&');
+                }
+                
+                const response = await authenticatedFetch(url);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    displayTransactions(data.data);
+                }
+            } catch (error) {
+                console.error('Error applying filters:', error);
+            }
+        }
+
+        // Display transactions in table
+        function displayTransactions(transactions) {
+            const tbody = document.getElementById('transactionsTableBody');
+            tbody.innerHTML = '';
+            
+            if (transactions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: #6b7280;">No transactions found</td></tr>';
+                return;
+            }
+            
+            transactions.forEach(tx => {
+                const row = document.createElement('tr');
+                const statusClass = tx.status === 'SUCCESS' ? 'status-success' : 
+                                  tx.status === 'FAILED' ? 'status-error' : 'status-warning';
+                
+                // Get source with color coding
+                const sourceColor = getSourceColor(tx.source);
+                const sourceDisplay = tx.source || 'unknown';
+                
+                row.innerHTML = `
+                    <td>${tx.id}</td>
+                    <td>${tx.phone_number}</td>
+                    <td>${tx.package_name || tx.package_code}</td>
+                    <td>Rp ${tx.amount.toLocaleString()}</td>
+                    <td><span class="status-dot ${statusClass}"></span>${tx.status}</td>
+                    <td><span style="background: ${sourceColor}; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">${sourceDisplay}</span></td>
+                    <td>${new Date(tx.created_at).toLocaleDateString()}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        // Export transactions with filters
+        async function exportTransactions() {
+            try {
+                const sourceFilter = document.getElementById('sourceFilter').value;
+                const statusFilter = document.getElementById('statusFilter').value;
+                
+                let url = '/api/export/transactions?';
+                const params = [];
+                
+                if (statusFilter) params.push(`status=${statusFilter}`);
+                if (sourceFilter) params.push(`source=${sourceFilter}`);
+                
+                url += params.join('&');
+                
+                const response = await authenticatedFetch(url);
+                const csvData = await response.text();
+                
+                const blob = new Blob([csvData], { type: 'text/csv' });
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = `transactions_${sourceFilter || 'all'}_${statusFilter || 'all'}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+            } catch (error) {
+                console.error('Error exporting transactions:', error);
+                alert('Failed to export transactions');
+            }
+        }
+
+        // Load security data with real metrics
+        async function loadSecurityData() {
+            try {
+                const response = await authenticatedFetch('/api/monitoring/security');
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    document.getElementById('unauthorizedAttempts').textContent = data.data.unauthorized_attempts || 0;
+                    document.getElementById('suspiciousTraffic').textContent = data.data.suspicious_traffic || 0;
+                }
+            } catch (error) {
+                console.error('Error loading security data:', error);
+            }
+        }
+
+        // Utility functions
+        function formatUptime(seconds) {
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            
+            if (days > 0) return `${days}d ${hours}h`;
+            if (hours > 0) return `${hours}h ${minutes}m`;
+            return `${minutes}m`;
+        }
+
+        function getLogLevel(statusCode) {
+            if (statusCode < 400) return 'INFO';
+            if (statusCode < 500) return 'WARN';
+            return 'ERROR';
+        }
+
+        function getLogLevelColor(level) {
+            switch(level) {
+                case 'INFO': return '#10b981';
+                case 'WARN': return '#f59e0b';
+                case 'ERROR': return '#ef4444';
+                default: return '#6b7280';
+            }
+        }
+
+        function getSourceColor(source) {
+            switch(source) {
+                case 'telegram_bot': return '#0088cc';
+                case 'whatsapp_bot': return '#25d366';
+                case 'web_dashboard': return '#6366f1';
+                case 'api_direct': return '#8b5cf6';
+                default: return '#6b7280';
+            }
+        }
+
+        // Mobile sidebar toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');
+        }
+
+        // Load source analytics
+        async function loadSourceAnalytics() {
+            try {
+                const response = await authenticatedFetch('/api/transactions?limit=1000');
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const sourceCounts = {
+                        telegram_bot: 0,
+                        whatsapp_bot: 0,
+                        web_dashboard: 0,
+                        api_direct: 0
+                    };
+                    
+                    data.data.forEach(tx => {
+                        if (sourceCounts.hasOwnProperty(tx.source)) {
+                            sourceCounts[tx.source]++;
+                        }
+                    });
+                    
+                    document.getElementById('telegramCount').textContent = sourceCounts.telegram_bot;
+                    document.getElementById('whatsappCount').textContent = sourceCounts.whatsapp_bot;
+                    document.getElementById('webCount').textContent = sourceCounts.web_dashboard;
+                    document.getElementById('apiCount').textContent = sourceCounts.api_direct;
+                }
+            } catch (error) {
+                console.error('Error loading source analytics:', error);
+            }
+        }
+
+        // Refresh functions
+        function refreshTransactionChart() { createTransactionTrendChart(); }
+        function refreshPerformanceChart() { createPerformanceChart(); }
+        function refreshSystemMetrics() { loadMonitoringData(); }
+        function refreshLogs() { loadSystemLogs(); }
+        function refreshTransactions() { loadTransactionsData(); }
+        function refreshSourceAnalytics() { loadSourceAnalytics(); }
+        function clearLogs() { document.getElementById('logContainer').innerHTML = ''; }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initNavigation();
+            loadOverviewData();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(() => {
+                const activeSection = document.querySelector('.nav-link.active').dataset.section;
+                loadSectionData(activeSection);
+            }, 30000);
+        });
+    </script>
+</body>
+</html>
