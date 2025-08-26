@@ -240,6 +240,29 @@
         </div>
         
         <div class="card">
+            <h3>💰 Product Price Comparison</h3>
+            <div style="margin-bottom: 15px;">
+                <button class="refresh-btn" onclick="refreshProductPrices()">🔄 Refresh Prices</button>
+                <button class="refresh-btn" onclick="showPriceFilters()" style="background: #2196F3;">🔍 Filter</button>
+            </div>
+            <div id="priceFilters" style="display: none; margin-bottom: 15px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                    <input type="text" id="productSearch" placeholder="Search products..." style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    <select id="priceRangeFilter" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                        <option value="">All Price Ranges</option>
+                        <option value="0-5000">Rp 0 - 5.000</option>
+                        <option value="5000-10000">Rp 5.000 - 10.000</option>
+                        <option value="10000-25000">Rp 10.000 - 25.000</option>
+                        <option value="25000-50000">Rp 25.000 - 50.000</option>
+                        <option value="50000+">Rp 50.000+</option>
+                    </select>
+                    <button class="refresh-btn" onclick="applyPriceFilters()">Apply</button>
+                </div>
+            </div>
+            <div id="productPricesTable" class="loading">Loading product prices...</div>
+        </div>
+
+        <div class="card">
             <h3>📋 Recent Transactions</h3>
             <div style="margin-bottom: 15px;">
                 <button class="refresh-btn" onclick="exportTransactions()">📥 Export CSV</button>

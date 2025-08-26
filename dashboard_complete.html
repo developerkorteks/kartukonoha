@@ -476,6 +476,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a href="#" class="nav-link" data-section="products">
+                            <i class="fas fa-tags"></i>
+                            <span>Product Pricing</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a href="#" class="nav-link" data-section="analytics">
                             <i class="fas fa-chart-bar"></i>
                             <span>Analytics</span>
@@ -599,6 +605,145 @@
                         <div class="chart-container">
                             <canvas id="performanceChart"></canvas>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Product Pricing Section -->
+            <section id="products-section" class="dashboard-section" style="display: none;">
+                <!-- Price Comparison Cards -->
+                <div class="dashboard-grid grid-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-user-shield"></i>
+                                Admin Pricing
+                            </h3>
+                            <span style="background: var(--primary-color); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 600;">Original Price</span>
+                        </div>
+                        <div style="text-align: center; margin-top: 2rem;">
+                            <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color);" id="adminPriceExample">Rp 2.000</div>
+                            <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">Base price from Nadia API</div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-handshake"></i>
+                                Reseller Pricing
+                            </h3>
+                            <span style="background: var(--success-color); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 600;">+Rp 500</span>
+                        </div>
+                        <div style="text-align: center; margin-top: 2rem;">
+                            <div style="font-size: 2.5rem; font-weight: bold; color: var(--success-color);" id="resellerPriceExample">Rp 2.500</div>
+                            <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">Base price + Rp 500</div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-users"></i>
+                                User Pricing
+                            </h3>
+                            <span style="background: var(--warning-color); color: white; padding: 0.25rem 0.75rem; border-radius: 1rem; font-size: 0.75rem; font-weight: 600;">+Rp 1.500</span>
+                        </div>
+                        <div style="text-align: center; margin-top: 2rem;">
+                            <div style="font-size: 2.5rem; font-weight: bold; color: var(--warning-color);" id="userPriceExample">Rp 3.500</div>
+                            <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;">Base price + Rp 1.500</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Comparison Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-table"></i>
+                            Product Price Comparison
+                        </h3>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="card-action" onclick="refreshProductPrices()" title="Refresh">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="card-action" onclick="togglePriceFilters()" title="Filter">
+                                <i class="fas fa-filter"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Controls -->
+                    <div id="priceFilters" style="display: none; margin-top: 1rem; padding: 1rem; background: #f8fafc; border-radius: 0.5rem;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Search Products</label>
+                                <input type="text" id="productSearch" placeholder="Search by name..." 
+                                       style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Price Range (Admin)</label>
+                                <select id="priceRangeFilter" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem;">
+                                    <option value="">All Prices</option>
+                                    <option value="0-5000">Rp 0 - 5.000</option>
+                                    <option value="5000-10000">Rp 5.000 - 10.000</option>
+                                    <option value="10000-25000">Rp 10.000 - 25.000</option>
+                                    <option value="25000-50000">Rp 25.000 - 50.000</option>
+                                    <option value="50000+">Rp 50.000+</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Limit Results</label>
+                                <select id="limitFilter" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem;">
+                                    <option value="10">10 products</option>
+                                    <option value="25" selected>25 products</option>
+                                    <option value="50">50 products</option>
+                                    <option value="100">100 products</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; align-items: end;">
+                                <button onclick="applyPriceFilters()" 
+                                        style="background: var(--primary-color); color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer; font-weight: 500;">
+                                    Apply Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Products Table -->
+                    <div class="table-container" style="margin-top: 1rem;">
+                        <table class="data-table" id="productsTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40%;">Product Name</th>
+                                    <th style="width: 15%; text-align: center;">Admin Price</th>
+                                    <th style="width: 15%; text-align: center;">Reseller Price</th>
+                                    <th style="width: 15%; text-align: center;">User Price</th>
+                                    <th style="width: 15%; text-align: center;">Markup</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTableBody">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 2rem; color: #6b7280;">
+                                        <div class="loading" style="margin: 0 auto 1rem;"></div>
+                                        Loading product prices...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div id="pricingPagination" style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                        <button onclick="previousPricePage()" id="prevPriceBtn" disabled 
+                                style="background: #f3f4f6; color: #6b7280; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: not-allowed;">
+                            Previous
+                        </button>
+                        <span id="pricePageInfo" style="font-size: 0.875rem; color: #6b7280;">Page 1</span>
+                        <button onclick="nextPricePage()" id="nextPriceBtn" 
+                                style="background: var(--primary-color); color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.375rem; cursor: pointer;">
+                            Next
+                        </button>
                     </div>
                 </div>
             </section>
@@ -901,6 +1046,9 @@
             switch(section) {
                 case 'overview':
                     await loadOverviewData();
+                    break;
+                case 'products':
+                    await loadProductPricingData();
                     break;
                 case 'monitoring':
                     await loadMonitoringData();
@@ -1384,6 +1532,203 @@
             } catch (error) {
                 console.error('Error loading security data:', error);
             }
+        }
+
+        // Product Pricing Functions
+        let currentPricePage = 1;
+        let currentPriceFilters = {};
+        let allProductsData = [];
+
+        // Load product pricing data
+        async function loadProductPricingData() {
+            try {
+                // Load sample data for price examples
+                await updatePriceExamples();
+                
+                // Load product comparison table
+                await refreshProductPrices();
+            } catch (error) {
+                console.error('Error loading product pricing data:', error);
+            }
+        }
+
+        // Update price examples in cards
+        async function updatePriceExamples() {
+            try {
+                const response = await authenticatedFetch('/api/packages?limit=1');
+                const data = await response.json();
+                
+                if (data.success && data.data && data.data.length > 0) {
+                    const sampleProduct = data.data[0];
+                    const adminPrice = sampleProduct.package_harga_int;
+                    const resellerPrice = adminPrice + 500;
+                    const userPrice = adminPrice + 1500;
+                    
+                    document.getElementById('adminPriceExample').textContent = formatRupiah(adminPrice);
+                    document.getElementById('resellerPriceExample').textContent = formatRupiah(resellerPrice);
+                    document.getElementById('userPriceExample').textContent = formatRupiah(userPrice);
+                }
+            } catch (error) {
+                console.error('Error updating price examples:', error);
+            }
+        }
+
+        // Refresh product prices table
+        async function refreshProductPrices() {
+            try {
+                const limit = document.getElementById('limitFilter')?.value || 25;
+                
+                // Show loading state
+                const tbody = document.getElementById('productsTableBody');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 2rem; color: #6b7280;">
+                            <div class="loading" style="margin: 0 auto 1rem;"></div>
+                            Loading product prices...
+                        </td>
+                    </tr>
+                `;
+                
+                // Fetch admin products (original prices)
+                const response = await authenticatedFetch(`/api/packages?limit=${limit}`);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    allProductsData = data.data;
+                    displayProductPrices(data.data);
+                } else {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 2rem; color: #ef4444;">
+                                Failed to load product data
+                            </td>
+                        </tr>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error refreshing product prices:', error);
+                const tbody = document.getElementById('productsTableBody');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 2rem; color: #ef4444;">
+                            Error loading product data
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Display product prices in table
+        function displayProductPrices(products) {
+            const tbody = document.getElementById('productsTableBody');
+            tbody.innerHTML = '';
+            
+            if (products.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 2rem; color: #6b7280;">
+                            No products found
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            products.forEach(product => {
+                const adminPrice = product.package_harga_int;
+                const resellerPrice = adminPrice + 500;
+                const userPrice = adminPrice + 1500;
+                const markup = ((userPrice - adminPrice) / adminPrice * 100).toFixed(1);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div style="font-weight: 500; color: #1f2937;">${product.package_name}</div>
+                        <div style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">${product.package_code}</div>
+                    </td>
+                    <td style="text-align: center;">
+                        <span style="font-weight: 600; color: var(--primary-color);">${formatRupiah(adminPrice)}</span>
+                    </td>
+                    <td style="text-align: center;">
+                        <span style="font-weight: 600; color: var(--success-color);">${formatRupiah(resellerPrice)}</span>
+                        <div style="font-size: 0.75rem; color: #6b7280;">+Rp 500</div>
+                    </td>
+                    <td style="text-align: center;">
+                        <span style="font-weight: 600; color: var(--warning-color);">${formatRupiah(userPrice)}</span>
+                        <div style="font-size: 0.75rem; color: #6b7280;">+Rp 1.500</div>
+                    </td>
+                    <td style="text-align: center;">
+                        <span style="background: rgba(37, 99, 235, 0.1); color: var(--primary-color); padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">
+                            ${markup}%
+                        </span>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        // Toggle price filters
+        function togglePriceFilters() {
+            const filters = document.getElementById('priceFilters');
+            filters.style.display = filters.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Apply price filters
+        async function applyPriceFilters() {
+            try {
+                const searchTerm = document.getElementById('productSearch').value.toLowerCase();
+                const priceRange = document.getElementById('priceRangeFilter').value;
+                const limit = document.getElementById('limitFilter').value;
+                
+                let filteredProducts = [...allProductsData];
+                
+                // Apply search filter
+                if (searchTerm) {
+                    filteredProducts = filteredProducts.filter(product => 
+                        product.package_name.toLowerCase().includes(searchTerm) ||
+                        product.package_code.toLowerCase().includes(searchTerm)
+                    );
+                }
+                
+                // Apply price range filter
+                if (priceRange) {
+                    const [min, max] = priceRange.split('-').map(p => p.replace('+', ''));
+                    filteredProducts = filteredProducts.filter(product => {
+                        const price = product.package_harga_int;
+                        if (max) {
+                            return price >= parseInt(min) && price <= parseInt(max);
+                        } else {
+                            return price >= parseInt(min);
+                        }
+                    });
+                }
+                
+                // Apply limit
+                filteredProducts = filteredProducts.slice(0, parseInt(limit));
+                
+                displayProductPrices(filteredProducts);
+            } catch (error) {
+                console.error('Error applying price filters:', error);
+            }
+        }
+
+        // Format rupiah currency
+        function formatRupiah(amount) {
+            return 'Rp ' + amount.toLocaleString('id-ID');
+        }
+
+        // Pagination functions (placeholder for future implementation)
+        function previousPricePage() {
+            if (currentPricePage > 1) {
+                currentPricePage--;
+                // Implement pagination logic here
+            }
+        }
+
+        function nextPricePage() {
+            currentPricePage++;
+            // Implement pagination logic here
         }
 
         // Utility functions
