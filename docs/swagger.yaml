@@ -139,11 +139,11 @@ definitions:
     type: object
   models.LoadMetrics:
     properties:
+      load_5min:
+        type: number
       load_15min:
         type: number
       load_1min:
-        type: number
-      load_5min:
         type: number
     type: object
   models.MemoryMetrics:
