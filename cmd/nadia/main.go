@@ -139,6 +139,26 @@ func main() {
 			protected.GET("/export/invoices", httpHandler.ExportInvoices)
 		}
 
+		// User endpoints (API Key or JWT protected, for end users with manipulated prices)
+		userGroup := api.Group("/user")
+		userGroup.Use(middleware.HybridAuthMiddleware(cfg.AdminAPIKey, cfg.JWTSecret))
+		{
+			// Products (with manipulated prices +1500)
+			userGroup.GET("/products", httpHandler.GetAllProducts)
+			userGroup.POST("/products/search", httpHandler.SearchProducts)
+			userGroup.GET("/products/stock", httpHandler.GetProductStock)
+		}
+
+		// Reseller endpoints (API Key or JWT protected, for resellers with manipulated prices)
+		resellerGroup := api.Group("/reseller")
+		resellerGroup.Use(middleware.HybridAuthMiddleware(cfg.AdminAPIKey, cfg.JWTSecret))
+		{
+			// Products (with manipulated prices +500)
+			resellerGroup.GET("/products", httpHandler.GetAllResellerProducts)
+			resellerGroup.POST("/products/search", httpHandler.SearchResellerProducts)
+			resellerGroup.GET("/products/stock", httpHandler.GetResellerProductStock)
+		}
+
 		// Dashboard & other data endpoints (publicly accessible data, but might need auth in real life)
 		api.GET("/dashboard", httpHandler.GetDashboardData)
 		api.GET("/transactions/:id", httpHandler.GetTransactionDetail)

@@ -139,11 +139,11 @@ definitions:
     type: object
   models.LoadMetrics:
     properties:
+      load_15min:
+        type: number
       load_1min:
         type: number
       load_5min:
-        type: number
-      load_15min:
         type: number
     type: object
   models.MemoryMetrics:
@@ -1061,6 +1061,91 @@ paths:
       summary: Purchase a package with access token
       tags:
       - purchase
+  /api/reseller/products:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all available products from Nadia API with manipulated
+        prices (+500 rupiah)
+      parameters:
+      - default: 100
+        description: Limit number of products returned
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+        BearerAuth: []
+      summary: Get all available products for resellers
+      tags:
+      - reseller-products
+  /api/reseller/products/search:
+    post:
+      consumes:
+      - application/json
+      description: Search and filter products by name, price, payment method, etc.
+        with manipulated prices (+500 rupiah)
+      parameters:
+      - description: Search filters
+        in: body
+        name: search
+        required: true
+        schema:
+          $ref: '#/definitions/models.PackageSearchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+        BearerAuth: []
+      summary: Search products with filters for resellers
+      tags:
+      - reseller-products
+  /api/reseller/products/stock:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve stock information for all products
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+        BearerAuth: []
+      summary: Get product stock information for resellers
+      tags:
+      - reseller-products
   /api/stats/daily:
     get:
       consumes:
@@ -1196,6 +1281,91 @@ paths:
       summary: Get transaction detail
       tags:
       - dashboard
+  /api/user/products:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all available products from Nadia API with manipulated
+        prices (+1500 rupiah)
+      parameters:
+      - default: 100
+        description: Limit number of products returned
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+        BearerAuth: []
+      summary: Get all available products for users
+      tags:
+      - products
+  /api/user/products/search:
+    post:
+      consumes:
+      - application/json
+      description: Search and filter products by name, price, payment method, etc.
+        with manipulated prices (+1500 rupiah)
+      parameters:
+      - description: Search filters
+        in: body
+        name: search
+        required: true
+        schema:
+          $ref: '#/definitions/models.PackageSearchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+        BearerAuth: []
+      summary: Search products with filters for users
+      tags:
+      - products
+  /api/user/products/stock:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve stock information for all products
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+        BearerAuth: []
+      summary: Get product stock information for users
+      tags:
+      - products
 schemes:
 - http
 - https

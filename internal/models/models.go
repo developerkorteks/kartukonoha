@@ -47,6 +47,26 @@ type PaymentMethod struct {
 	Description              string `json:"desc"`
 }
 
+// Product structure for user endpoints (with manipulated price)
+type Product struct {
+	PackageCode             string          `json:"package_code"`
+	PackageName             string          `json:"package_name"`
+	PackageNameShort        string          `json:"package_name_alias_short"`
+	PackageDescription      string          `json:"package_description"`
+	PackagePrice            int             `json:"package_harga_int"` // Original price + 1500
+	PackagePriceFormatted   string          `json:"package_harga"`     // Formatted manipulated price
+	HaveDailyLimit          bool            `json:"have_daily_limit"`
+	DailyLimitDetails       DailyLimit      `json:"daily_limit_details"`
+	NoNeedLogin             bool            `json:"no_need_login"`
+	CanMultiTrx             bool            `json:"can_multi_trx"`
+	CanScheduledTrx         bool            `json:"can_scheduled_trx"`
+	HaveCutOffTime          bool            `json:"have_cut_off_time"`
+	CutOffTime              CutOffTime      `json:"cut_off_time"`
+	NeedCheckStock          bool            `json:"need_check_stock"`
+	IsShowPaymentMethod     bool            `json:"is_show_payment_method"`
+	AvailablePaymentMethods []PaymentMethod `json:"available_payment_methods"`
+}
+
 // Monitoring structures
 type SystemMetrics struct {
 	ServiceStatus   string              `json:"service_status"`
