@@ -7,9 +7,13 @@ Usage: python3 python_example.py
 import requests
 import json
 import time
+import os
 from typing import Dict, Any, Optional
 
-API_BASE = 'http://localhost:8080/api'
+# Configure API base URL - change this to match your server
+# For local development: 'http://localhost:8080/api' or 'http://127.0.0.1:8080/api'
+# For production: 'https://your-domain.com/api'
+API_BASE = os.getenv('NADIA_API_BASE', 'http://localhost:8080/api')
 
 class NadiaAPI:
     def __init__(self, base_url: str = API_BASE):

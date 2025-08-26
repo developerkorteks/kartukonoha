@@ -1,0 +1,45 @@
+# DomCloud Configuration for Nadia API
+# This file configures the deployment for DomCloud hosting
+
+# Build configuration
+build:
+  - name: Install Go dependencies
+    run: go mod download
+  
+  - name: Build application
+    run: CGO_ENABLED=1 go build -o nadia ./cmd/nadia
+
+# Runtime configuration
+runtime:
+  # Use the built binary
+  start: ./nadia
+  
+  # Environment variables for production
+  env:
+    ENVIRONMENT: production
+    PORT: $PORT
+    DB_PATH: ./data/nadia_transactions.db
+    SWAGGER_HOST: ""
+    
+    # API Configuration (keep existing values)
+    SSO_API_BASE_URL: https://sso.putri-veronica.my.id/api
+    NADIA_API_URL: https://putri-veronica.my.id/api/user
+    SSO_STATIC_KEY: 18e0cf008b474614a0b20f9c170cd33f
+    
+    # Authentication (keep existing values)
+    NADIA_USERNAME: kortkeks
+    NADIA_PASSWORD: nabilalbab78
+    ADMIN_API_KEY: nadia-admin-2024-secure-key
+    JWT_SECRET: nadia-jwt-secret-key-2024
+    
+    # Token configuration
+    TOKEN_EXPIRY_HOURS: 8
+
+# Health check
+health:
+  path: /api/health
+  
+# Static files (if needed)
+static:
+  - "*.html"
+  - "favicon.ico"

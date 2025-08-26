@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
-	_ "github.com/nabilulilalbab/nadia/docs" // swagger docs
+	"github.com/nabilulilalbab/nadia/docs" // swagger docs
 	"github.com/nabilulilalbab/nadia/internal/config"
 	"github.com/nabilulilalbab/nadia/internal/database"
 	"github.com/nabilulilalbab/nadia/internal/handlers"
@@ -26,7 +26,7 @@ import (
 // @license.name MIT
 // @license.url https://opensource.org/licenses/MIT
 
-// @host localhost:8080
+// @host
 // @BasePath /
 // @schemes http https
 
@@ -43,6 +43,14 @@ import (
 func main() {
 	// Load configuration
 	cfg := config.LoadConfig()
+
+	// Set Gin mode based on environment
+	if cfg.IsProduction() {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	// Configure Swagger host dynamically
+	setupSwaggerHost(cfg)
 
 	// Initialize database
 	db, err := database.InitDatabase(cfg.DBPath)
@@ -139,8 +147,19 @@ func main() {
 	// Serve Static HTML files & Swagger
 	serveStatic(r)
 
+	// Log startup information
 	log.Printf("Starting Nadia API Server v2.0 on %s", cfg.ServerAddress)
-	log.Println("Swagger Docs: http://localhost:8080/swagger/index.html")
+	log.Printf("Environment: %s", cfg.Environment)
+
+	// Log Swagger URL
+	port := "8080"
+	if cfg.ServerAddress != "" && cfg.ServerAddress != ":8080" {
+		if len(cfg.ServerAddress) > 1 && cfg.ServerAddress[0] == ':' {
+			port = cfg.ServerAddress[1:]
+		}
+	}
+	log.Printf("Swagger Docs: http://localhost:%s/swagger/index.html (or use your server's IP/domain)", port)
+
 	if err := r.Run(cfg.ServerAddress); err != nil {
 		log.Fatal("Failed to start server:", err)
 	}
@@ -167,9 +186,22 @@ func serveStatic(r *gin.Engine) {
 	})
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	
+
 	// Serve favicon
 	r.GET("/favicon.ico", func(c *gin.Context) {
 		c.File("favicon.ico")
 	})
+}
+
+// setupSwaggerHost configures Swagger host dynamically
+func setupSwaggerHost(cfg *config.Config) {
+	// If SWAGGER_HOST is set, use it
+	if cfg.SwaggerHost != "" {
+		docs.SwaggerInfo.Host = cfg.SwaggerHost
+		return
+	}
+
+	// Always leave host empty so Swagger UI uses window.location.host
+	// This allows it to work with localhost, 127.0.0.1, or any other host
+	docs.SwaggerInfo.Host = ""
 }

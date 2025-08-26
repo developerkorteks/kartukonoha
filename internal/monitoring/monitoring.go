@@ -228,7 +228,7 @@ func CheckUptime() models.UptimeMetrics {
 		IsUp:         true,
 		ResponseTime: 0, // Placeholder
 		StatusCode:   200,
-		Location:     "localhost",
+		Location:     "server", // Generic location instead of hardcoded localhost
 	}
 }
 

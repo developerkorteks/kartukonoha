@@ -1,7 +1,10 @@
 // Nadia API v2.0 - JavaScript Example
 // Usage: node javascript_example.js
 
-const API_BASE = 'http://localhost:8080/api';
+// Configure API base URL - change this to match your server
+// For local development: 'http://localhost:8080/api' or 'http://127.0.0.1:8080/api'
+// For production: 'https://your-domain.com/api'
+const API_BASE = process.env.NADIA_API_BASE || 'http://localhost:8080/api';
 
 // Helper function for API calls
 async function apiCall(method, endpoint, data = null) {

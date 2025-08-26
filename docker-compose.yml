@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  nadia-api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - ENVIRONMENT=production
+      - PORT=8080
+      - DB_PATH=/app/data/nadia_transactions.db
+      - SSO_API_BASE_URL=https://sso.putri-veronica.my.id/api
+      - NADIA_API_URL=https://putri-veronica.my.id/api/user
+      - SSO_STATIC_KEY=18e0cf008b474614a0b20f9c170cd33f
+      - NADIA_USERNAME=kortkeks
+      - NADIA_PASSWORD=nabilalbab78
+      - ADMIN_API_KEY=nadia-admin-2024-secure-key
+      - JWT_SECRET=nadia-jwt-secret-key-2024
+      - TOKEN_EXPIRY_HOURS=8
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
