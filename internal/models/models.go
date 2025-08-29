@@ -298,6 +298,17 @@ type SimpleTransactionCheckRequest struct {
 	TransactionID string `json:"transaction_id" binding:"required" example:"a1e3b046-3dda-4eb5-93c2-f0eb01a1a453"`
 }
 
+// PriceData structure for the new price endpoint
+type PriceData struct {
+	BasePrice     int    `json:"base_price"`
+	ResellerPrice int    `json:"reseller_price"`
+	MemberPrice   int    `json:"member_price"`
+	PackageCode   string `json:"package_code"`
+	PackageName   string `json:"package_name"`
+	CreatedAt     string `json:"created_at"`
+	ModifiedAt    string `json:"modified_at"`
+}
+
 type PackageSearchRequest struct {
 	Query         string `json:"query,omitempty" example:"masa aktif"`
 	PaymentMethod string `json:"payment_method,omitempty" example:"BALANCE"`

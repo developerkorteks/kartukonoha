@@ -37,18 +37,49 @@ func formatRupiah(amount int) string {
 	return fmt.Sprintf("Rp. %s,00", result.String())
 }
 
-// Helper function to convert Package to Product with manipulated price
-func packageToProduct(pkg models.Package) models.Product {
-	// Add 1500 to original price
-	manipulatedPrice := pkg.PackagePrice + 1500
+// Helper function to fetch price data from the new price endpoint
+func (h *HTTPHandler) fetchPriceData() (map[string]models.PriceData, error) {
+	resp, err := h.nadiaService.MakeRequest("GET", "/limited/xl/price-list-all.json", nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	var priceResp models.APIResponse
+	json.Unmarshal(body, &priceResp)
+
+	var priceList []models.PriceData
+	priceData, _ := json.Marshal(priceResp.Data)
+	json.Unmarshal(priceData, &priceList)
+
+	// Create a map for quick lookup by package_code
+	priceMap := make(map[string]models.PriceData)
+	for _, price := range priceList {
+		priceMap[price.PackageCode] = price
+	}
+
+	return priceMap, nil
+}
+
+// Helper function to convert Package to Product with price from new endpoint + 1500
+func packageToProductWithNewPrice(pkg models.Package, priceMap map[string]models.PriceData) models.Product {
+	// Default to original price + 1500 if not found in new price data
+	finalPrice := pkg.PackagePrice + 1500
+
+	// Check if we have price data from the new endpoint
+	if priceData, exists := priceMap[pkg.PackageCode]; exists {
+		// Use member_price from new endpoint + 1500
+		finalPrice = priceData.MemberPrice + 1500
+	}
 
 	return models.Product{
 		PackageCode:             pkg.PackageCode,
 		PackageName:             pkg.PackageName,
 		PackageNameShort:        pkg.PackageNameShort,
 		PackageDescription:      pkg.PackageDescription,
-		PackagePrice:            manipulatedPrice,
-		PackagePriceFormatted:   formatRupiah(manipulatedPrice),
+		PackagePrice:            finalPrice,
+		PackagePriceFormatted:   formatRupiah(finalPrice),
 		HaveDailyLimit:          pkg.HaveDailyLimit,
 		DailyLimitDetails:       pkg.DailyLimitDetails,
 		NoNeedLogin:             pkg.NoNeedLogin,
@@ -77,6 +108,17 @@ func (h *HTTPHandler) GetAllProducts(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "100")
 	limit, _ := strconv.Atoi(limitStr)
 
+	// Fetch price data from new endpoint
+	priceMap, err := h.fetchPriceData()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to fetch price data: " + err.Error(),
+			Success:    false,
+		})
+		return
+	}
+
 	resp, err := h.nadiaService.MakeRequest("GET", "/limited/xl/package-list-all.json", nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
@@ -92,14 +134,14 @@ func (h *HTTPHandler) GetAllProducts(c *gin.Context) {
 	var nadiaResp models.APIResponse
 	json.Unmarshal(body, &nadiaResp)
 
-	// Convert packages to products with manipulated prices
+	// Convert packages to products with prices from new endpoint
 	var packages []models.Package
 	packagesData, _ := json.Marshal(nadiaResp.Data)
 	json.Unmarshal(packagesData, &packages)
 
 	var products []models.Product
 	for _, pkg := range packages {
-		products = append(products, packageToProduct(pkg))
+		products = append(products, packageToProductWithNewPrice(pkg, priceMap))
 	}
 
 	// Apply limit if specified
@@ -138,6 +180,17 @@ func (h *HTTPHandler) SearchProducts(c *gin.Context) {
 		return
 	}
 
+	// Fetch price data from new endpoint
+	priceMap, err := h.fetchPriceData()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to fetch price data: " + err.Error(),
+			Success:    false,
+		})
+		return
+	}
+
 	resp, err := h.nadiaService.MakeRequest("GET", "/limited/xl/package-list-all.json", nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
@@ -153,14 +206,14 @@ func (h *HTTPHandler) SearchProducts(c *gin.Context) {
 	var nadiaResp models.APIResponse
 	json.Unmarshal(body, &nadiaResp)
 
-	// Convert packages to products with manipulated prices
+	// Convert packages to products with prices from new endpoint
 	var packages []models.Package
 	packagesData, _ := json.Marshal(nadiaResp.Data)
 	json.Unmarshal(packagesData, &packages)
 
 	var filteredProducts []models.Product
 	for _, pkg := range packages {
-		product := packageToProduct(pkg)
+		product := packageToProductWithNewPrice(pkg, priceMap)
 
 		// Apply filters
 		if searchReq.Query != "" {
@@ -171,7 +224,7 @@ func (h *HTTPHandler) SearchProducts(c *gin.Context) {
 			}
 		}
 
-		// Filter by manipulated price (not original price)
+		// Filter by price from new endpoint + 1500
 		if searchReq.MaxPrice > 0 && product.PackagePrice > searchReq.MaxPrice {
 			continue
 		}
@@ -233,16 +286,24 @@ func (h *HTTPHandler) GetProductStock(c *gin.Context) {
 	c.JSON(resp.StatusCode, nadiaResp)
 }
 
-// Helper function to convert package to reseller product (with +500 price manipulation)
-func convertToResellerProduct(pkg models.Package) models.Product {
-	manipulatedPrice := pkg.PackagePrice + 500 // Add 500 rupiah for resellers
+// Helper function to convert package to reseller product with price from new endpoint + 1500
+func convertToResellerProductWithNewPrice(pkg models.Package, priceMap map[string]models.PriceData) models.Product {
+	// Default to original price + 1500 if not found in new price data
+	finalPrice := pkg.PackagePrice + 1500
+
+	// Check if we have price data from the new endpoint
+	if priceData, exists := priceMap[pkg.PackageCode]; exists {
+		// Use reseller_price from new endpoint + 1500
+		finalPrice = priceData.ResellerPrice + 1500
+	}
+
 	return models.Product{
 		PackageCode:             pkg.PackageCode,
 		PackageName:             pkg.PackageName,
 		PackageNameShort:        pkg.PackageNameShort,
 		PackageDescription:      pkg.PackageDescription,
-		PackagePrice:            manipulatedPrice,
-		PackagePriceFormatted:   formatRupiah(manipulatedPrice),
+		PackagePrice:            finalPrice,
+		PackagePriceFormatted:   formatRupiah(finalPrice),
 		HaveDailyLimit:          pkg.HaveDailyLimit,
 		DailyLimitDetails:       pkg.DailyLimitDetails,
 		NoNeedLogin:             pkg.NoNeedLogin,
@@ -271,6 +332,17 @@ func (h *HTTPHandler) GetAllResellerProducts(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "100")
 	limit, _ := strconv.Atoi(limitStr)
 
+	// Fetch price data from new endpoint
+	priceMap, err := h.fetchPriceData()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to fetch price data: " + err.Error(),
+			Success:    false,
+		})
+		return
+	}
+
 	resp, err := h.nadiaService.MakeRequest("GET", "/limited/xl/package-list-all.json", nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
@@ -286,7 +358,7 @@ func (h *HTTPHandler) GetAllResellerProducts(c *gin.Context) {
 	var nadiaResp models.APIResponse
 	json.Unmarshal(body, &nadiaResp)
 
-	// Convert packages to reseller products with manipulated prices
+	// Convert packages to reseller products with prices from new endpoint
 	var products []models.Product
 	if packages, ok := nadiaResp.Data.([]interface{}); ok {
 		for _, pkg := range packages {
@@ -294,7 +366,7 @@ func (h *HTTPHandler) GetAllResellerProducts(c *gin.Context) {
 				var packageData models.Package
 				jsonData, _ := json.Marshal(pkgMap)
 				json.Unmarshal(jsonData, &packageData)
-				products = append(products, convertToResellerProduct(packageData))
+				products = append(products, convertToResellerProductWithNewPrice(packageData, priceMap))
 			}
 		}
 	}
@@ -335,6 +407,17 @@ func (h *HTTPHandler) SearchResellerProducts(c *gin.Context) {
 		return
 	}
 
+	// Fetch price data from new endpoint
+	priceMap, err := h.fetchPriceData()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to fetch price data: " + err.Error(),
+			Success:    false,
+		})
+		return
+	}
+
 	resp, err := h.nadiaService.MakeRequest("GET", "/limited/xl/package-list-all.json", nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
@@ -350,7 +433,7 @@ func (h *HTTPHandler) SearchResellerProducts(c *gin.Context) {
 	var nadiaResp models.APIResponse
 	json.Unmarshal(body, &nadiaResp)
 
-	// Convert and filter packages
+	// Convert and filter packages with prices from new endpoint
 	var filteredProducts []models.Product
 	if packages, ok := nadiaResp.Data.([]interface{}); ok {
 		for _, pkg := range packages {
@@ -359,7 +442,7 @@ func (h *HTTPHandler) SearchResellerProducts(c *gin.Context) {
 				jsonData, _ := json.Marshal(pkgMap)
 				json.Unmarshal(jsonData, &packageData)
 
-				product := convertToResellerProduct(packageData)
+				product := convertToResellerProductWithNewPrice(packageData, priceMap)
 
 				// Apply filters
 				if searchReq.Query != "" {
