@@ -286,15 +286,15 @@ func (h *HTTPHandler) GetProductStock(c *gin.Context) {
 	c.JSON(resp.StatusCode, nadiaResp)
 }
 
-// Helper function to convert package to reseller product with price from new endpoint + 1500
+// Helper function to convert package to reseller product with price from new endpoint + 500
 func convertToResellerProductWithNewPrice(pkg models.Package, priceMap map[string]models.PriceData) models.Product {
-	// Default to original price + 1500 if not found in new price data
-	finalPrice := pkg.PackagePrice + 1500
+	// Default to original price + 500 if not found in new price data
+	finalPrice := pkg.PackagePrice + 500
 
 	// Check if we have price data from the new endpoint
 	if priceData, exists := priceMap[pkg.PackageCode]; exists {
-		// Use reseller_price from new endpoint + 1500
-		finalPrice = priceData.ResellerPrice + 1500
+		// Use reseller_price from new endpoint + 500
+		finalPrice = priceData.ResellerPrice + 500
 	}
 
 	return models.Product{
@@ -319,7 +319,7 @@ func convertToResellerProductWithNewPrice(pkg models.Package, priceMap map[strin
 
 // GetAllResellerProducts godoc
 // @Summary Get all available products for resellers
-// @Description Retrieve all available products from Nadia API with manipulated prices (+500 rupiah)
+// @Description Retrieve all available products from Nadia API with prices from new price endpoint (reseller_price + 500 rupiah)
 // @Tags reseller-products
 // @Accept json
 // @Produce json
@@ -386,7 +386,7 @@ func (h *HTTPHandler) GetAllResellerProducts(c *gin.Context) {
 
 // SearchResellerProducts godoc
 // @Summary Search products with filters for resellers
-// @Description Search and filter products by name, price, payment method, etc. with manipulated prices (+500 rupiah)
+// @Description Search and filter products by name, price, payment method, etc. with prices from new price endpoint (reseller_price + 500 rupiah)
 // @Tags reseller-products
 // @Accept json
 // @Produce json

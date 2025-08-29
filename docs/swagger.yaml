@@ -139,11 +139,11 @@ definitions:
     type: object
   models.LoadMetrics:
     properties:
+      load_5min:
+        type: number
       load_15min:
         type: number
       load_1min:
-        type: number
-      load_5min:
         type: number
     type: object
   models.MemoryMetrics:
@@ -1065,8 +1065,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieve all available products from Nadia API with manipulated
-        prices (+500 rupiah)
+      description: Retrieve all available products from Nadia API with prices from
+        new price endpoint (reseller_price + 500 rupiah)
       parameters:
       - default: 100
         description: Limit number of products returned
@@ -1095,7 +1095,7 @@ paths:
       consumes:
       - application/json
       description: Search and filter products by name, price, payment method, etc.
-        with manipulated prices (+500 rupiah)
+        with prices from new price endpoint (reseller_price + 500 rupiah)
       parameters:
       - description: Search filters
         in: body

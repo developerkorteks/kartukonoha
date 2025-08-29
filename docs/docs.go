@@ -1080,7 +1080,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve all available products from Nadia API with manipulated prices (+500 rupiah)",
+                "description": "Retrieve all available products from Nadia API with prices from new price endpoint (reseller_price + 500 rupiah)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1124,7 +1124,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Search and filter products by name, price, payment method, etc. with manipulated prices (+500 rupiah)",
+                "description": "Search and filter products by name, price, payment method, etc. with prices from new price endpoint (reseller_price + 500 rupiah)",
                 "consumes": [
                     "application/json"
                 ],
