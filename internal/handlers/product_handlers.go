@@ -9,7 +9,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/nabilulilalbab/nadia/internal/models"
+	"github.com/nabilulilalbab/nadia/internal/services"
 )
 
 // Helper function to format price in Indonesian Rupiah
@@ -37,41 +39,12 @@ func formatRupiah(amount int) string {
 	return fmt.Sprintf("Rp. %s,00", result.String())
 }
 
-// Helper function to fetch price data from the new price endpoint
-func (h *HTTPHandler) fetchPriceData() (map[string]models.PriceData, error) {
-	resp, err := h.nadiaService.MakeRequest("GET", "/limited/xl/price-list-all.json", nil)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
-	var priceResp models.APIResponse
-	json.Unmarshal(body, &priceResp)
-
-	var priceList []models.PriceData
-	priceData, _ := json.Marshal(priceResp.Data)
-	json.Unmarshal(priceData, &priceList)
-
-	// Create a map for quick lookup by package_code
-	priceMap := make(map[string]models.PriceData)
-	for _, price := range priceList {
-		priceMap[price.PackageCode] = price
-	}
-
-	return priceMap, nil
-}
-
-// Helper function to convert Package to Product with price from new endpoint + 1500
-func packageToProductWithNewPrice(pkg models.Package, priceMap map[string]models.PriceData) models.Product {
-	// Default to original price + 1500 if not found in new price data
-	finalPrice := pkg.PackagePrice + 1500
-
-	// Check if we have price data from the new endpoint
-	if priceData, exists := priceMap[pkg.PackageCode]; exists {
-		// Use member_price from new endpoint + 1500
-		finalPrice = priceData.MemberPrice + 1500
-	}
+// Helper function to convert Package to Product with actual price + 1500
+func packageToProductWithNewPrice(pkg models.Package, nadiaService *services.NadiaService) models.Product {
+	// Get actual price from price-list-all.json using the same method as purchase
+	actualPrice := nadiaService.GetPackagePrice(pkg.PackageCode)
+	finalPrice := actualPrice + 1500
 
 	return models.Product{
 		PackageCode:             pkg.PackageCode,
@@ -108,18 +81,7 @@ func (h *HTTPHandler) GetAllProducts(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "100")
 	limit, _ := strconv.Atoi(limitStr)
 
-	// Fetch price data from new endpoint
-	priceMap, err := h.fetchPriceData()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			StatusCode: http.StatusInternalServerError,
-			Message:    "Failed to fetch price data: " + err.Error(),
-			Success:    false,
-		})
-		return
-	}
-
-	resp, err := h.nadiaService.MakeRequest("GET", "/limited/xl/package-list-all.json", nil)
+	resp, err := h.nadiaService.MakeRequest("POST", "/limited/xl/package-list-all.json", nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			StatusCode: http.StatusInternalServerError,
@@ -134,14 +96,14 @@ func (h *HTTPHandler) GetAllProducts(c *gin.Context) {
 	var nadiaResp models.APIResponse
 	json.Unmarshal(body, &nadiaResp)
 
-	// Convert packages to products with prices from new endpoint
+	// Convert packages to products with original price + 1500
 	var packages []models.Package
 	packagesData, _ := json.Marshal(nadiaResp.Data)
 	json.Unmarshal(packagesData, &packages)
 
 	var products []models.Product
 	for _, pkg := range packages {
-		products = append(products, packageToProductWithNewPrice(pkg, priceMap))
+		products = append(products, packageToProductWithNewPrice(pkg, h.nadiaService))
 	}
 
 	// Apply limit if specified
@@ -180,18 +142,7 @@ func (h *HTTPHandler) SearchProducts(c *gin.Context) {
 		return
 	}
 
-	// Fetch price data from new endpoint
-	priceMap, err := h.fetchPriceData()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			StatusCode: http.StatusInternalServerError,
-			Message:    "Failed to fetch price data: " + err.Error(),
-			Success:    false,
-		})
-		return
-	}
-
-	resp, err := h.nadiaService.MakeRequest("GET", "/limited/xl/package-list-all.json", nil)
+	resp, err := h.nadiaService.MakeRequest("POST", "/limited/xl/package-list-all.json", nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			StatusCode: http.StatusInternalServerError,
@@ -213,7 +164,7 @@ func (h *HTTPHandler) SearchProducts(c *gin.Context) {
 
 	var filteredProducts []models.Product
 	for _, pkg := range packages {
-		product := packageToProductWithNewPrice(pkg, priceMap)
+		product := packageToProductWithNewPrice(pkg, h.nadiaService)
 
 		// Apply filters
 		if searchReq.Query != "" {
@@ -286,16 +237,11 @@ func (h *HTTPHandler) GetProductStock(c *gin.Context) {
 	c.JSON(resp.StatusCode, nadiaResp)
 }
 
-// Helper function to convert package to reseller product with price from new endpoint + 500
-func convertToResellerProductWithNewPrice(pkg models.Package, priceMap map[string]models.PriceData) models.Product {
-	// Default to original price + 500 if not found in new price data
-	finalPrice := pkg.PackagePrice + 500
-
-	// Check if we have price data from the new endpoint
-	if priceData, exists := priceMap[pkg.PackageCode]; exists {
-		// Use reseller_price from new endpoint + 500
-		finalPrice = priceData.ResellerPrice + 500
-	}
+// Helper function to convert package to reseller product with actual price + 500
+func convertToResellerProductWithNewPrice(pkg models.Package, nadiaService *services.NadiaService) models.Product {
+	// Get actual price from price-list-all.json using the same method as purchase
+	actualPrice := nadiaService.GetPackagePrice(pkg.PackageCode)
+	finalPrice := actualPrice + 500
 
 	return models.Product{
 		PackageCode:             pkg.PackageCode,
@@ -332,18 +278,7 @@ func (h *HTTPHandler) GetAllResellerProducts(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "100")
 	limit, _ := strconv.Atoi(limitStr)
 
-	// Fetch price data from new endpoint
-	priceMap, err := h.fetchPriceData()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			StatusCode: http.StatusInternalServerError,
-			Message:    "Failed to fetch price data: " + err.Error(),
-			Success:    false,
-		})
-		return
-	}
-
-	resp, err := h.nadiaService.MakeRequest("GET", "/limited/xl/package-list-all.json", nil)
+	resp, err := h.nadiaService.MakeRequest("POST", "/limited/xl/package-list-all.json", nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			StatusCode: http.StatusInternalServerError,
@@ -366,7 +301,7 @@ func (h *HTTPHandler) GetAllResellerProducts(c *gin.Context) {
 				var packageData models.Package
 				jsonData, _ := json.Marshal(pkgMap)
 				json.Unmarshal(jsonData, &packageData)
-				products = append(products, convertToResellerProductWithNewPrice(packageData, priceMap))
+				products = append(products, convertToResellerProductWithNewPrice(packageData, h.nadiaService))
 			}
 		}
 	}
@@ -407,18 +342,7 @@ func (h *HTTPHandler) SearchResellerProducts(c *gin.Context) {
 		return
 	}
 
-	// Fetch price data from new endpoint
-	priceMap, err := h.fetchPriceData()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.APIResponse{
-			StatusCode: http.StatusInternalServerError,
-			Message:    "Failed to fetch price data: " + err.Error(),
-			Success:    false,
-		})
-		return
-	}
-
-	resp, err := h.nadiaService.MakeRequest("GET", "/limited/xl/package-list-all.json", nil)
+	resp, err := h.nadiaService.MakeRequest("POST", "/limited/xl/package-list-all.json", nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
 			StatusCode: http.StatusInternalServerError,
@@ -442,7 +366,7 @@ func (h *HTTPHandler) SearchResellerProducts(c *gin.Context) {
 				jsonData, _ := json.Marshal(pkgMap)
 				json.Unmarshal(jsonData, &packageData)
 
-				product := convertToResellerProductWithNewPrice(packageData, priceMap)
+				product := convertToResellerProductWithNewPrice(packageData, h.nadiaService)
 
 				// Apply filters
 				if searchReq.Query != "" {

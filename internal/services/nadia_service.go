@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/nabilulilalbab/nadia/internal/config"
-	"github.com/nabilulilalbab/nadia/internal/models"
 )
 
 // TokenManager handles the lifecycle of the API token.
@@ -246,34 +245,38 @@ func (s *NadiaService) makeRequestWithRetry(method, endpoint string, payload int
 
 // GetPackagePrice fetches the price for a specific package code.
 func (s *NadiaService) GetPackagePrice(packageCode string) int {
-	resp, err := s.MakeRequest("GET", "/limited/xl/package-list-all.json", nil)
+	resp, err := s.MakeRequest("POST", "/limited/xl/price-list-all.json", nil)
 	if err != nil {
-		log.Printf("Failed to fetch packages for price lookup: %v", err)
+		log.Printf("Failed to fetch price list for price lookup: %v", err)
 		return 0
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("Failed to read packages response: %v", err)
+		log.Printf("Failed to read price response: %v", err)
 		return 0
 	}
 
 	var nadiaResp struct {
-		Data []models.Package `json:"data"`
+		Data []struct {
+			PackageCode string `json:"package_code"`
+			PackageName string `json:"package_name"`
+			Price       int    `json:"price"`
+		} `json:"data"`
 	}
 
 	if err := json.Unmarshal(body, &nadiaResp); err != nil {
-		log.Printf("Failed to parse packages response: %v", err)
+		log.Printf("Failed to parse price response: %v", err)
 		return 0
 	}
 
-	for _, pkg := range nadiaResp.Data {
-		if pkg.PackageCode == packageCode {
-			return pkg.PackagePrice
+	for _, priceData := range nadiaResp.Data {
+		if priceData.PackageCode == packageCode {
+			return priceData.Price
 		}
 	}
 
-	log.Printf("Package not found: %s", packageCode)
+	log.Printf("Package price not found: %s", packageCode)
 	return 0
 }

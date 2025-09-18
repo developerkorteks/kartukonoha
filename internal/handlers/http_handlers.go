@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/nabilulilalbab/nadia/internal/models"
 	"github.com/nabilulilalbab/nadia/internal/services"
 	"github.com/nabilulilalbab/nadia/internal/utils"
@@ -111,9 +112,18 @@ func (h *HTTPHandler) GetAllPackages(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "100")
 	limit, _ := strconv.Atoi(limitStr)
 
-	resp, err := h.nadiaService.MakeRequest("GET", "/limited/xl/package-list-all.json", nil)
+	// ✅ POST + body kosong
+	resp, err := h.nadiaService.MakeRequest(
+		"POST",
+		"/limited/xl/package-list-all.json",
+		map[string]interface{}{},
+	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.APIResponse{StatusCode: http.StatusInternalServerError, Message: "Failed to fetch packages: " + err.Error(), Success: false})
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to fetch packages: " + err.Error(),
+			Success:    false,
+		})
 		return
 	}
 	defer resp.Body.Close()
@@ -129,7 +139,12 @@ func (h *HTTPHandler) GetAllPackages(c *gin.Context) {
 		packages = packages[:limit]
 	}
 
-	c.JSON(http.StatusOK, models.APIResponse{StatusCode: http.StatusOK, Message: fmt.Sprintf("Retrieved %d packages", len(packages)), Success: true, Data: packages})
+	c.JSON(http.StatusOK, models.APIResponse{
+		StatusCode: http.StatusOK,
+		Message:    fmt.Sprintf("Retrieved %d packages", len(packages)),
+		Success:    true,
+		Data:       packages,
+	})
 }
 
 // SearchPackages godoc
@@ -148,13 +163,26 @@ func (h *HTTPHandler) GetAllPackages(c *gin.Context) {
 func (h *HTTPHandler) SearchPackages(c *gin.Context) {
 	var searchReq models.PackageSearchRequest
 	if err := c.ShouldBindJSON(&searchReq); err != nil {
-		c.JSON(http.StatusBadRequest, models.APIResponse{StatusCode: http.StatusBadRequest, Message: "Invalid search request: " + err.Error(), Success: false})
+		c.JSON(http.StatusBadRequest, models.APIResponse{
+			StatusCode: http.StatusBadRequest,
+			Message:    "Invalid search request: " + err.Error(),
+			Success:    false,
+		})
 		return
 	}
 
-	resp, err := h.nadiaService.MakeRequest("GET", "/limited/xl/package-list-all.json", nil)
+	// Panggil Nadia API dengan POST + body {}
+	resp, err := h.nadiaService.MakeRequest(
+		"POST",
+		"/limited/xl/package-list-all.json",
+		map[string]interface{}{},
+	)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.APIResponse{StatusCode: http.StatusInternalServerError, Message: "Failed to fetch packages: " + err.Error(), Success: false})
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to fetch packages: " + err.Error(),
+			Success:    false,
+		})
 		return
 	}
 	defer resp.Body.Close()
@@ -163,20 +191,31 @@ func (h *HTTPHandler) SearchPackages(c *gin.Context) {
 	var nadiaResp struct {
 		Data []models.Package `json:"data"`
 	}
-	json.Unmarshal(body, &nadiaResp)
+	if err := json.Unmarshal(body, &nadiaResp); err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to parse Nadia API response: " + err.Error(),
+			Success:    false,
+		})
+		return
+	}
 
 	var filteredPackages []models.Package
 	for _, pkg := range nadiaResp.Data {
+		// Filter query (case-insensitive)
 		if searchReq.Query != "" {
 			query := strings.ToLower(searchReq.Query)
-			if !strings.Contains(strings.ToLower(pkg.PackageName), query) && !strings.Contains(strings.ToLower(pkg.PackageDescription), query) {
+			if !strings.Contains(strings.ToLower(pkg.PackageName), query) &&
+				!strings.Contains(strings.ToLower(pkg.PackageDescription), query) {
 				continue
 			}
 		}
+
+		// Filter payment method (case-insensitive)
 		if searchReq.PaymentMethod != "" {
 			hasPaymentMethod := false
 			for _, pm := range pkg.AvailablePaymentMethods {
-				if pm.PaymentMethod == searchReq.PaymentMethod {
+				if strings.EqualFold(pm.PaymentMethod, searchReq.PaymentMethod) {
 					hasPaymentMethod = true
 					break
 				}
@@ -185,16 +224,31 @@ func (h *HTTPHandler) SearchPackages(c *gin.Context) {
 				continue
 			}
 		}
-		if searchReq.MinPrice > 0 && pkg.PackagePrice < searchReq.MinPrice {
-			continue
+
+		// Filter harga: paket harga 0 tetap masuk
+		if pkg.PackagePrice != 0 {
+			if searchReq.MinPrice > 0 && pkg.PackagePrice < searchReq.MinPrice {
+				continue
+			}
+			if searchReq.MaxPrice > 0 && pkg.PackagePrice > searchReq.MaxPrice {
+				continue
+			}
 		}
-		if searchReq.MaxPrice > 0 && pkg.PackagePrice > searchReq.MaxPrice {
-			continue
-		}
+
 		filteredPackages = append(filteredPackages, pkg)
 	}
 
-	c.JSON(http.StatusOK, models.APIResponse{StatusCode: http.StatusOK, Message: fmt.Sprintf("Found %d packages matching your criteria", len(filteredPackages)), Success: true, Data: filteredPackages})
+	// Pastikan selalu return array kosong, bukan null
+	if filteredPackages == nil {
+		filteredPackages = []models.Package{}
+	}
+
+	c.JSON(http.StatusOK, models.APIResponse{
+		StatusCode: http.StatusOK,
+		Message:    fmt.Sprintf("Found %d packages matching your criteria", len(filteredPackages)),
+		Success:    true,
+		Data:       filteredPackages,
+	})
 }
 
 // RequestOTP godoc
