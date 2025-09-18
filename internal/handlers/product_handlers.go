@@ -14,30 +14,6 @@ import (
 	"github.com/nabilulilalbab/nadia/internal/services"
 )
 
-// Helper function to format price in Indonesian Rupiah
-func formatRupiah(amount int) string {
-	if amount == 0 {
-		return "Rp. 0,00"
-	}
-
-	// Convert to string and add thousand separators
-	str := strconv.Itoa(amount)
-	n := len(str)
-	if n <= 3 {
-		return fmt.Sprintf("Rp. %s,00", str)
-	}
-
-	// Add dots for thousands
-	var result strings.Builder
-	for i, digit := range str {
-		if i > 0 && (n-i)%3 == 0 {
-			result.WriteString(".")
-		}
-		result.WriteRune(digit)
-	}
-
-	return fmt.Sprintf("Rp. %s,00", result.String())
-}
 
 
 // Helper function to convert Package to Product with actual price + 1500

@@ -16,6 +16,31 @@ import (
 	"github.com/nabilulilalbab/nadia/internal/utils"
 )
 
+// Helper function to format price in Indonesian Rupiah
+func formatRupiah(amount int) string {
+	if amount == 0 {
+		return "Rp. 0,00"
+	}
+
+	// Convert to string and add thousand separators
+	str := strconv.Itoa(amount)
+	n := len(str)
+	if n <= 3 {
+		return fmt.Sprintf("Rp. %s,00", str)
+	}
+
+	// Add dots for thousands
+	var result strings.Builder
+	for i, digit := range str {
+		if i > 0 && (n-i)%3 == 0 {
+			result.WriteString(".")
+		}
+		result.WriteRune(digit)
+	}
+
+	return fmt.Sprintf("Rp. %s,00", result.String())
+}
+
 // HTTPHandler holds all dependencies for the handlers.
 type HTTPHandler struct {
 	nadiaService       *services.NadiaService
@@ -134,6 +159,13 @@ func (h *HTTPHandler) GetAllPackages(c *gin.Context) {
 	}
 	json.Unmarshal(body, &nadiaResp)
 
+	// Update packages with actual prices from price-list-all.json
+	for i := range nadiaResp.Data {
+		actualPrice := h.nadiaService.GetPackagePrice(nadiaResp.Data[i].PackageCode)
+		nadiaResp.Data[i].PackagePrice = actualPrice
+		nadiaResp.Data[i].PackagePriceFormatted = formatRupiah(actualPrice)
+	}
+
 	packages := nadiaResp.Data
 	if limit > 0 && len(packages) > limit {
 		packages = packages[:limit]
@@ -200,6 +232,13 @@ func (h *HTTPHandler) SearchPackages(c *gin.Context) {
 		return
 	}
 
+	// Update packages with actual prices from price-list-all.json
+	for i := range nadiaResp.Data {
+		actualPrice := h.nadiaService.GetPackagePrice(nadiaResp.Data[i].PackageCode)
+		nadiaResp.Data[i].PackagePrice = actualPrice
+		nadiaResp.Data[i].PackagePriceFormatted = formatRupiah(actualPrice)
+	}
+
 	var filteredPackages []models.Package
 	for _, pkg := range nadiaResp.Data {
 		// Filter query (case-insensitive)
@@ -225,14 +264,12 @@ func (h *HTTPHandler) SearchPackages(c *gin.Context) {
 			}
 		}
 
-		// Filter harga: paket harga 0 tetap masuk
-		if pkg.PackagePrice != 0 {
-			if searchReq.MinPrice > 0 && pkg.PackagePrice < searchReq.MinPrice {
-				continue
-			}
-			if searchReq.MaxPrice > 0 && pkg.PackagePrice > searchReq.MaxPrice {
-				continue
-			}
+		// Filter harga: now using actual prices
+		if searchReq.MinPrice > 0 && pkg.PackagePrice < searchReq.MinPrice {
+			continue
+		}
+		if searchReq.MaxPrice > 0 && pkg.PackagePrice > searchReq.MaxPrice {
+			continue
 		}
 
 		filteredPackages = append(filteredPackages, pkg)
