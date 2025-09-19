@@ -14,6 +14,58 @@ import (
 	"github.com/nabilulilalbab/nadia/internal/services"
 )
 
+// Build a map[package_code]price from price-list-all.json
+func (h *HTTPHandler) fetchPriceMap() (map[string]int, error) {
+	resp, err := h.nadiaService.MakeRequest("POST", "/limited/xl/price-list-all.json", nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	var raw struct {
+		Data []struct {
+			PackageCode string `json:"package_code"`
+			Price       int    `json:"price"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return nil, err
+	}
+	m := make(map[string]int, len(raw.Data))
+	for _, it := range raw.Data {
+		m[it.PackageCode] = it.Price
+	}
+	return m, nil
+}
+
+// Convert Package to Product using a provided price map and markup
+func packageToProductWithPriceMap(pkg models.Package, priceMap map[string]int, markup int, ns *services.NadiaService) models.Product {
+	price := priceMap[pkg.PackageCode]
+	finalPrice := price + markup
+	return models.Product{
+		PackageCode:             pkg.PackageCode,
+		PackageName:             pkg.PackageName,
+		PackageNameShort:        pkg.PackageNameShort,
+		PackageDescription:      pkg.PackageDescription,
+		PackagePrice:            finalPrice,
+		PackagePriceFormatted:   formatRupiah(finalPrice),
+		HaveDailyLimit:          pkg.HaveDailyLimit,
+		DailyLimitDetails:       pkg.DailyLimitDetails,
+		NoNeedLogin:             pkg.NoNeedLogin,
+		CanMultiTrx:             pkg.CanMultiTrx,
+		CanScheduledTrx:         pkg.CanScheduledTrx,
+		HaveCutOffTime:          pkg.HaveCutOffTime,
+		CutOffTime:              pkg.CutOffTime,
+		NeedCheckStock:          pkg.NeedCheckStock,
+		IsShowPaymentMethod:     pkg.IsShowPaymentMethod,
+		AvailablePaymentMethods: pkg.AvailablePaymentMethods,
+		IsAkrab:                 pkg.IsAkrab,
+		IsCircle:                pkg.IsCircle,
+		SedangGangguan:          pkg.SedangGangguan,
+	}
+}
+
 
 
 // Helper function to convert Package to Product with actual price + 1500 (User Products)
@@ -81,9 +133,20 @@ func (h *HTTPHandler) GetAllProducts(c *gin.Context) {
 	packagesData, _ := json.Marshal(nadiaResp.Data)
 	json.Unmarshal(packagesData, &packages)
 
+	// Build price map once per request
+	priceMap, err := h.fetchPriceMap()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to fetch price data: " + err.Error(),
+			Success:    false,
+		})
+		return
+	}
+
 	var products []models.Product
 	for _, pkg := range packages {
-		products = append(products, packageToProductWithActualPrice(pkg, h.nadiaService))
+		products = append(products, packageToProductWithPriceMap(pkg, priceMap, 1500, h.nadiaService))
 	}
 
 	// Apply limit if specified
@@ -142,9 +205,20 @@ func (h *HTTPHandler) SearchProducts(c *gin.Context) {
 	packagesData, _ := json.Marshal(nadiaResp.Data)
 	json.Unmarshal(packagesData, &packages)
 
+	// Build price map once per request
+	priceMap, err := h.fetchPriceMap()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to fetch price data: " + err.Error(),
+			Success:    false,
+		})
+		return
+	}
+
 	var filteredProducts []models.Product
 	for _, pkg := range packages {
-		product := packageToProductWithActualPrice(pkg, h.nadiaService)
+		product := packageToProductWithPriceMap(pkg, priceMap, 1500, h.nadiaService)
 
 		// Apply filters
 		if searchReq.Query != "" {
