@@ -16,8 +16,8 @@ import (
 
 
 
-// Helper function to convert Package to Product with actual price + 1500
-func packageToProductWithNewPrice(pkg models.Package, nadiaService *services.NadiaService) models.Product {
+// Helper function to convert Package to Product with actual price + 1500 (User Products)
+func packageToProductWithActualPrice(pkg models.Package, nadiaService *services.NadiaService) models.Product {
 	// Get actual price from price-list-all.json using the same method as purchase
 	actualPrice := nadiaService.GetPackagePrice(pkg.PackageCode)
 	finalPrice := actualPrice + 1500
@@ -39,6 +39,9 @@ func packageToProductWithNewPrice(pkg models.Package, nadiaService *services.Nad
 		NeedCheckStock:          pkg.NeedCheckStock,
 		IsShowPaymentMethod:     pkg.IsShowPaymentMethod,
 		AvailablePaymentMethods: pkg.AvailablePaymentMethods,
+		IsAkrab:                 pkg.IsAkrab,
+		IsCircle:                pkg.IsCircle,
+		SedangGangguan:          pkg.SedangGangguan,
 	}
 }
 
@@ -57,6 +60,7 @@ func (h *HTTPHandler) GetAllProducts(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "100")
 	limit, _ := strconv.Atoi(limitStr)
 
+	// Fetch packages information
 	resp, err := h.nadiaService.MakeRequest("POST", "/limited/xl/package-list-all.json", nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
@@ -72,14 +76,14 @@ func (h *HTTPHandler) GetAllProducts(c *gin.Context) {
 	var nadiaResp models.APIResponse
 	json.Unmarshal(body, &nadiaResp)
 
-	// Convert packages to products with original price + 1500
+	// Convert packages to products with actual price + 1500
 	var packages []models.Package
 	packagesData, _ := json.Marshal(nadiaResp.Data)
 	json.Unmarshal(packagesData, &packages)
 
 	var products []models.Product
 	for _, pkg := range packages {
-		products = append(products, packageToProductWithNewPrice(pkg, h.nadiaService))
+		products = append(products, packageToProductWithActualPrice(pkg, h.nadiaService))
 	}
 
 	// Apply limit if specified
@@ -140,7 +144,7 @@ func (h *HTTPHandler) SearchProducts(c *gin.Context) {
 
 	var filteredProducts []models.Product
 	for _, pkg := range packages {
-		product := packageToProductWithNewPrice(pkg, h.nadiaService)
+		product := packageToProductWithActualPrice(pkg, h.nadiaService)
 
 		// Apply filters
 		if searchReq.Query != "" {
@@ -213,8 +217,8 @@ func (h *HTTPHandler) GetProductStock(c *gin.Context) {
 	c.JSON(resp.StatusCode, nadiaResp)
 }
 
-// Helper function to convert package to reseller product with actual price + 500
-func convertToResellerProductWithNewPrice(pkg models.Package, nadiaService *services.NadiaService) models.Product {
+// Helper function to convert package to reseller product with actual price + 500 (Reseller Products)
+func convertToResellerProductWithActualPrice(pkg models.Package, nadiaService *services.NadiaService) models.Product {
 	// Get actual price from price-list-all.json using the same method as purchase
 	actualPrice := nadiaService.GetPackagePrice(pkg.PackageCode)
 	finalPrice := actualPrice + 500
@@ -236,6 +240,9 @@ func convertToResellerProductWithNewPrice(pkg models.Package, nadiaService *serv
 		NeedCheckStock:          pkg.NeedCheckStock,
 		IsShowPaymentMethod:     pkg.IsShowPaymentMethod,
 		AvailablePaymentMethods: pkg.AvailablePaymentMethods,
+		IsAkrab:                 pkg.IsAkrab,
+		IsCircle:                pkg.IsCircle,
+		SedangGangguan:          pkg.SedangGangguan,
 	}
 }
 
@@ -277,7 +284,7 @@ func (h *HTTPHandler) GetAllResellerProducts(c *gin.Context) {
 				var packageData models.Package
 				jsonData, _ := json.Marshal(pkgMap)
 				json.Unmarshal(jsonData, &packageData)
-				products = append(products, convertToResellerProductWithNewPrice(packageData, h.nadiaService))
+				products = append(products, convertToResellerProductWithActualPrice(packageData, h.nadiaService))
 			}
 		}
 	}
@@ -342,7 +349,7 @@ func (h *HTTPHandler) SearchResellerProducts(c *gin.Context) {
 				jsonData, _ := json.Marshal(pkgMap)
 				json.Unmarshal(jsonData, &packageData)
 
-				product := convertToResellerProductWithNewPrice(packageData, h.nadiaService)
+				product := convertToResellerProductWithActualPrice(packageData, h.nadiaService)
 
 				// Apply filters
 				if searchReq.Query != "" {

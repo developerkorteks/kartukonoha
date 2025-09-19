@@ -28,6 +28,9 @@ type Package struct {
 	NeedCheckStock          bool            `json:"need_check_stock"`
 	IsShowPaymentMethod     bool            `json:"is_show_payment_method"`
 	AvailablePaymentMethods []PaymentMethod `json:"available_payment_methods"`
+	IsAkrab                 bool            `json:"is_akrab"`
+	IsCircle                bool            `json:"is_circle"`
+	SedangGangguan          bool            `json:"sedang_gangguan"`
 }
 
 type DailyLimit struct {
@@ -53,7 +56,7 @@ type Product struct {
 	PackageName             string          `json:"package_name"`
 	PackageNameShort        string          `json:"package_name_alias_short"`
 	PackageDescription      string          `json:"package_description"`
-	PackagePrice            int             `json:"package_harga_int"` // Original price + 1500
+	PackagePrice            int             `json:"package_harga_int"` // Original price + markup
 	PackagePriceFormatted   string          `json:"package_harga"`     // Formatted manipulated price
 	HaveDailyLimit          bool            `json:"have_daily_limit"`
 	DailyLimitDetails       DailyLimit      `json:"daily_limit_details"`
@@ -65,6 +68,9 @@ type Product struct {
 	NeedCheckStock          bool            `json:"need_check_stock"`
 	IsShowPaymentMethod     bool            `json:"is_show_payment_method"`
 	AvailablePaymentMethods []PaymentMethod `json:"available_payment_methods"`
+	IsAkrab                 bool            `json:"is_akrab"`
+	IsCircle                bool            `json:"is_circle"`
+	SedangGangguan          bool            `json:"sedang_gangguan"`
 }
 
 // Monitoring structures
