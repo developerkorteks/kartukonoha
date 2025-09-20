@@ -492,11 +492,11 @@ func (h *HTTPHandler) GetTransactionDetail(c *gin.Context) {
 
 // CheckCardStatus godoc
 // @Summary Check XL card status and balance
-// @Description Check the status, balance, and active period of an XL card using OTP verification
+// @Description Check the status, balance, and active period of an XL card using access token from login verification
 // @Tags card
 // @Accept json
 // @Produce json
-// @Param request body models.SimpleCheckStatusRequest true "Check status request"
+// @Param request body models.SimpleAccessTokenRequest true "Check status request with access token"
 // @Success 200 {object} models.APIResponse
 // @Failure 400 {object} models.APIResponse
 // @Failure 500 {object} models.APIResponse
@@ -504,20 +504,13 @@ func (h *HTTPHandler) GetTransactionDetail(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Security BearerAuth
 func (h *HTTPHandler) CheckCardStatus(c *gin.Context) {
-	var req models.SimpleCheckStatusRequest
+	var req models.SimpleAccessTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.APIResponse{StatusCode: http.StatusBadRequest, Message: "Invalid request: " + err.Error(), Success: false})
 		return
 	}
 
-	session, err := h.transactionService.GetOTPSession(req.PhoneNumber)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.APIResponse{StatusCode: http.StatusBadRequest, Message: err.Error(), Success: false})
-		return
-	}
-
-	accessToken := req.OTPCode + ":" + session.AuthID
-	payload := map[string]string{"access_token": accessToken}
+	payload := map[string]string{"access_token": req.AccessToken}
 
 	resp, err := h.nadiaService.MakeRequest("POST", "/limited/xl/status-kartu.json", payload)
 	if err != nil {

@@ -169,11 +169,11 @@ func (h *HTTPHandler) ExportInvoices(c *gin.Context) {
 
 // CheckActivePackages godoc
 // @Summary Check active packages on XL card
-// @Description Check all active packages/quotas on an XL card using OTP verification
+// @Description Check all active packages/quotas on an XL card using access token from login verification
 // @Tags card
 // @Accept json
 // @Produce json
-// @Param request body models.SimpleCheckStatusRequest true "Check active packages request"
+// @Param request body models.SimpleAccessTokenRequest true "Check active packages request with access token"
 // @Success 200 {object} models.APIResponse
 // @Failure 400 {object} models.APIResponse
 // @Failure 500 {object} models.APIResponse
@@ -181,20 +181,13 @@ func (h *HTTPHandler) ExportInvoices(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Security BearerAuth
 func (h *HTTPHandler) CheckActivePackages(c *gin.Context) {
-	var req models.SimpleCheckStatusRequest
+	var req models.SimpleAccessTokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.APIResponse{StatusCode: http.StatusBadRequest, Message: "Invalid request: " + err.Error(), Success: false})
 		return
 	}
 
-	session, err := h.transactionService.GetOTPSession(req.PhoneNumber)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, models.APIResponse{StatusCode: http.StatusBadRequest, Message: err.Error(), Success: false})
-		return
-	}
-
-	accessToken := req.OTPCode + ":" + session.AuthID
-	payload := map[string]string{"access_token": accessToken}
+	payload := map[string]string{"access_token": req.AccessToken}
 
 	resp, err := h.nadiaService.MakeRequest("POST", "/limited/xl/package-active-list.json", payload)
 	if err != nil {
@@ -312,6 +305,41 @@ func (h *HTTPHandler) GetPackageStock(c *gin.Context) {
 	resp, err := h.nadiaService.MakeRequest("GET", "/limited/xl/check-stock-package-global.json", nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{StatusCode: http.StatusInternalServerError, Message: "Failed to get package stock: " + err.Error(), Success: false})
+		return
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	var nadiaResp models.APIResponse
+	json.Unmarshal(body, &nadiaResp)
+
+	c.JSON(resp.StatusCode, nadiaResp)
+}
+
+// CheckSpecificPackageStock godoc
+// @Summary Check specific package stock
+// @Description Check stock for a specific package by package code (for Akrab and Circle packages)
+// @Tags packages
+// @Accept json
+// @Produce json
+// @Param request body models.PackageStockRequest true "Package stock check request"
+// @Success 200 {object} models.APIResponse
+// @Failure 400 {object} models.APIResponse
+// @Failure 500 {object} models.APIResponse
+// @Router /api/packages/stock/check [post]
+// @Security ApiKeyAuth
+// @Security BearerAuth
+func (h *HTTPHandler) CheckSpecificPackageStock(c *gin.Context) {
+	var req models.PackageStockRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, models.APIResponse{StatusCode: http.StatusBadRequest, Message: "Invalid request: " + err.Error(), Success: false})
+		return
+	}
+
+	payload := map[string]string{"package_code": req.PackageCode}
+	resp, err := h.nadiaService.MakeRequest("POST", "/limited/xl/check-stock-package.json", payload)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{StatusCode: http.StatusInternalServerError, Message: "Failed to check package stock: " + err.Error(), Success: false})
 		return
 	}
 	defer resp.Body.Close()

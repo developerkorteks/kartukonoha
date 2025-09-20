@@ -106,6 +106,7 @@ func main() {
 			protected.GET("/packages", httpHandler.GetAllPackages)
 			protected.POST("/packages/search", httpHandler.SearchPackages)
 			protected.GET("/packages/stock", httpHandler.GetPackageStock)
+			protected.POST("/packages/stock/check", httpHandler.CheckSpecificPackageStock)
 
 			// OTP
 			protected.POST("/otp/request", httpHandler.RequestOTP)

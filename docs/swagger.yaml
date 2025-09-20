@@ -139,11 +139,11 @@ definitions:
     type: object
   models.LoadMetrics:
     properties:
+      load_1min:
+        type: number
       load_5min:
         type: number
       load_15min:
-        type: number
-      load_1min:
         type: number
     type: object
   models.MemoryMetrics:
@@ -188,6 +188,14 @@ definitions:
       query:
         example: masa aktif
         type: string
+    type: object
+  models.PackageStockRequest:
+    properties:
+      package_code:
+        example: CIRCLE10GB
+        type: string
+    required:
+    - package_code
     type: object
   models.PaymentRecord:
     properties:
@@ -253,17 +261,13 @@ definitions:
       type:
         type: string
     type: object
-  models.SimpleCheckStatusRequest:
+  models.SimpleAccessTokenRequest:
     properties:
-      otp_code:
-        example: "123456"
-        type: string
-      phone_number:
-        example: "087786388052"
+      access_token:
+        example: 1146047:e22f5d5d-9172-4400-8ef5-15b353c204f7
         type: string
     required:
-    - otp_code
-    - phone_number
+    - access_token
     type: object
   models.SimpleOTPRequest:
     properties:
@@ -485,14 +489,15 @@ paths:
     post:
       consumes:
       - application/json
-      description: Check all active packages/quotas on an XL card using OTP verification
+      description: Check all active packages/quotas on an XL card using access token
+        from login verification
       parameters:
-      - description: Check active packages request
+      - description: Check active packages request with access token
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/models.SimpleCheckStatusRequest'
+          $ref: '#/definitions/models.SimpleAccessTokenRequest'
       produces:
       - application/json
       responses:
@@ -519,14 +524,14 @@ paths:
       consumes:
       - application/json
       description: Check the status, balance, and active period of an XL card using
-        OTP verification
+        access token from login verification
       parameters:
-      - description: Check status request
+      - description: Check status request with access token
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/models.SimpleCheckStatusRequest'
+          $ref: '#/definitions/models.SimpleAccessTokenRequest'
       produces:
       - application/json
       responses:
@@ -1003,6 +1008,40 @@ paths:
       - ApiKeyAuth: []
       - BearerAuth: []
       summary: Get package stock information
+      tags:
+      - packages
+  /api/packages/stock/check:
+    post:
+      consumes:
+      - application/json
+      description: Check stock for a specific package by package code (for Akrab and
+        Circle packages)
+      parameters:
+      - description: Package stock check request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.PackageStockRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
+      summary: Check specific package stock
       tags:
       - packages
   /api/payment-methods:

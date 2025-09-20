@@ -300,8 +300,16 @@ type SimpleCheckStatusRequest struct {
 	OTPCode     string `json:"otp_code" binding:"required" example:"123456"`
 }
 
+type SimpleAccessTokenRequest struct {
+	AccessToken string `json:"access_token" binding:"required" example:"1146047:e22f5d5d-9172-4400-8ef5-15b353c204f7"`
+}
+
 type SimpleTransactionCheckRequest struct {
 	TransactionID string `json:"transaction_id" binding:"required" example:"a1e3b046-3dda-4eb5-93c2-f0eb01a1a453"`
+}
+
+type PackageStockRequest struct {
+	PackageCode string `json:"package_code" binding:"required" example:"CIRCLE10GB"`
 }
 
 // PriceData structure for the new price endpoint

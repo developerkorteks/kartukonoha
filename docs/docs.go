@@ -129,7 +129,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Check all active packages/quotas on an XL card using OTP verification",
+                "description": "Check all active packages/quotas on an XL card using access token from login verification",
                 "consumes": [
                     "application/json"
                 ],
@@ -142,12 +142,12 @@ const docTemplate = `{
                 "summary": "Check active packages on XL card",
                 "parameters": [
                     {
-                        "description": "Check active packages request",
+                        "description": "Check active packages request with access token",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.SimpleCheckStatusRequest"
+                            "$ref": "#/definitions/models.SimpleAccessTokenRequest"
                         }
                     }
                 ],
@@ -183,7 +183,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Check the status, balance, and active period of an XL card using OTP verification",
+                "description": "Check the status, balance, and active period of an XL card using access token from login verification",
                 "consumes": [
                     "application/json"
                 ],
@@ -196,12 +196,12 @@ const docTemplate = `{
                 "summary": "Check XL card status and balance",
                 "parameters": [
                     {
-                        "description": "Check status request",
+                        "description": "Check status request with access token",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.SimpleCheckStatusRequest"
+                            "$ref": "#/definitions/models.SimpleAccessTokenRequest"
                         }
                     }
                 ],
@@ -968,6 +968,60 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/packages/stock/check": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    },
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Check stock for a specific package by package code (for Akrab and Circle packages)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "packages"
+                ],
+                "summary": "Check specific package stock",
+                "parameters": [
+                    {
+                        "description": "Package stock check request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.PackageStockRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.APIResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/models.APIResponse"
                         }
@@ -1843,6 +1897,18 @@ const docTemplate = `{
                 }
             }
         },
+        "models.PackageStockRequest": {
+            "type": "object",
+            "required": [
+                "package_code"
+            ],
+            "properties": {
+                "package_code": {
+                    "type": "string",
+                    "example": "CIRCLE10GB"
+                }
+            }
+        },
         "models.PaymentRecord": {
             "type": "object",
             "properties": {
@@ -1940,20 +2006,15 @@ const docTemplate = `{
                 }
             }
         },
-        "models.SimpleCheckStatusRequest": {
+        "models.SimpleAccessTokenRequest": {
             "type": "object",
             "required": [
-                "otp_code",
-                "phone_number"
+                "access_token"
             ],
             "properties": {
-                "otp_code": {
+                "access_token": {
                     "type": "string",
-                    "example": "123456"
-                },
-                "phone_number": {
-                    "type": "string",
-                    "example": "087786388052"
+                    "example": "1146047:e22f5d5d-9172-4400-8ef5-15b353c204f7"
                 }
             }
         },
