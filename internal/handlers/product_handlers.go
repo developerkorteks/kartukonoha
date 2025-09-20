@@ -68,34 +68,6 @@ func packageToProductWithPriceMap(pkg models.Package, priceMap map[string]int, m
 
 
 
-// Helper function to convert Package to Product with actual price + 1500 (User Products)
-func packageToProductWithActualPrice(pkg models.Package, nadiaService *services.NadiaService) models.Product {
-	// Get actual price from price-list-all.json using the same method as purchase
-	actualPrice := nadiaService.GetPackagePrice(pkg.PackageCode)
-	finalPrice := actualPrice + 1500
-
-	return models.Product{
-		PackageCode:             pkg.PackageCode,
-		PackageName:             pkg.PackageName,
-		PackageNameShort:        pkg.PackageNameShort,
-		PackageDescription:      pkg.PackageDescription,
-		PackagePrice:            finalPrice,
-		PackagePriceFormatted:   formatRupiah(finalPrice),
-		HaveDailyLimit:          pkg.HaveDailyLimit,
-		DailyLimitDetails:       pkg.DailyLimitDetails,
-		NoNeedLogin:             pkg.NoNeedLogin,
-		CanMultiTrx:             pkg.CanMultiTrx,
-		CanScheduledTrx:         pkg.CanScheduledTrx,
-		HaveCutOffTime:          pkg.HaveCutOffTime,
-		CutOffTime:              pkg.CutOffTime,
-		NeedCheckStock:          pkg.NeedCheckStock,
-		IsShowPaymentMethod:     pkg.IsShowPaymentMethod,
-		AvailablePaymentMethods: pkg.AvailablePaymentMethods,
-		IsAkrab:                 pkg.IsAkrab,
-		IsCircle:                pkg.IsCircle,
-		SedangGangguan:          pkg.SedangGangguan,
-	}
-}
 
 // GetAllProducts godoc
 // @Summary Get all available products for users
@@ -291,34 +263,6 @@ func (h *HTTPHandler) GetProductStock(c *gin.Context) {
 	c.JSON(resp.StatusCode, nadiaResp)
 }
 
-// Helper function to convert package to reseller product with actual price + 500 (Reseller Products)
-func convertToResellerProductWithActualPrice(pkg models.Package, nadiaService *services.NadiaService) models.Product {
-	// Get actual price from price-list-all.json using the same method as purchase
-	actualPrice := nadiaService.GetPackagePrice(pkg.PackageCode)
-	finalPrice := actualPrice + 500
-
-	return models.Product{
-		PackageCode:             pkg.PackageCode,
-		PackageName:             pkg.PackageName,
-		PackageNameShort:        pkg.PackageNameShort,
-		PackageDescription:      pkg.PackageDescription,
-		PackagePrice:            finalPrice,
-		PackagePriceFormatted:   formatRupiah(finalPrice),
-		HaveDailyLimit:          pkg.HaveDailyLimit,
-		DailyLimitDetails:       pkg.DailyLimitDetails,
-		NoNeedLogin:             pkg.NoNeedLogin,
-		CanMultiTrx:             pkg.CanMultiTrx,
-		CanScheduledTrx:         pkg.CanScheduledTrx,
-		HaveCutOffTime:          pkg.HaveCutOffTime,
-		CutOffTime:              pkg.CutOffTime,
-		NeedCheckStock:          pkg.NeedCheckStock,
-		IsShowPaymentMethod:     pkg.IsShowPaymentMethod,
-		AvailablePaymentMethods: pkg.AvailablePaymentMethods,
-		IsAkrab:                 pkg.IsAkrab,
-		IsCircle:                pkg.IsCircle,
-		SedangGangguan:          pkg.SedangGangguan,
-	}
-}
 
 // GetAllResellerProducts godoc
 // @Summary Get all available products for resellers
@@ -335,6 +279,7 @@ func (h *HTTPHandler) GetAllResellerProducts(c *gin.Context) {
 	limitStr := c.DefaultQuery("limit", "100")
 	limit, _ := strconv.Atoi(limitStr)
 
+	// Fetch packages information
 	resp, err := h.nadiaService.MakeRequest("POST", "/limited/xl/package-list-all.json", nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.APIResponse{
@@ -350,17 +295,25 @@ func (h *HTTPHandler) GetAllResellerProducts(c *gin.Context) {
 	var nadiaResp models.APIResponse
 	json.Unmarshal(body, &nadiaResp)
 
-	// Convert packages to reseller products with prices from new endpoint
+	// Convert packages to products with actual price + 500
+	var packages []models.Package
+	packagesData, _ := json.Marshal(nadiaResp.Data)
+	json.Unmarshal(packagesData, &packages)
+
+	// Build price map once per request (SAME AS USER ENDPOINT)
+	priceMap, err := h.fetchPriceMap()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to fetch price data: " + err.Error(),
+			Success:    false,
+		})
+		return
+	}
+
 	var products []models.Product
-	if packages, ok := nadiaResp.Data.([]interface{}); ok {
-		for _, pkg := range packages {
-			if pkgMap, ok := pkg.(map[string]interface{}); ok {
-				var packageData models.Package
-				jsonData, _ := json.Marshal(pkgMap)
-				json.Unmarshal(jsonData, &packageData)
-				products = append(products, convertToResellerProductWithActualPrice(packageData, h.nadiaService))
-			}
-		}
+	for _, pkg := range packages {
+		products = append(products, packageToProductWithPriceMap(pkg, priceMap, 500, h.nadiaService))
 	}
 
 	// Apply limit if specified
@@ -414,50 +367,58 @@ func (h *HTTPHandler) SearchResellerProducts(c *gin.Context) {
 	var nadiaResp models.APIResponse
 	json.Unmarshal(body, &nadiaResp)
 
-	// Convert and filter packages with prices from new endpoint
+	// Convert packages to products with prices from new endpoint
+	var packages []models.Package
+	packagesData, _ := json.Marshal(nadiaResp.Data)
+	json.Unmarshal(packagesData, &packages)
+
+	// Build price map once per request (SAME AS USER ENDPOINT)
+	priceMap, err := h.fetchPriceMap()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.APIResponse{
+			StatusCode: http.StatusInternalServerError,
+			Message:    "Failed to fetch price data: " + err.Error(),
+			Success:    false,
+		})
+		return
+	}
+
 	var filteredProducts []models.Product
-	if packages, ok := nadiaResp.Data.([]interface{}); ok {
-		for _, pkg := range packages {
-			if pkgMap, ok := pkg.(map[string]interface{}); ok {
-				var packageData models.Package
-				jsonData, _ := json.Marshal(pkgMap)
-				json.Unmarshal(jsonData, &packageData)
+	for _, pkg := range packages {
+		product := packageToProductWithPriceMap(pkg, priceMap, 500, h.nadiaService)
 
-				product := convertToResellerProductWithActualPrice(packageData, h.nadiaService)
-
-				// Apply filters
-				if searchReq.Query != "" {
-					query := strings.ToLower(searchReq.Query)
-					if !strings.Contains(strings.ToLower(product.PackageName), query) &&
-						!strings.Contains(strings.ToLower(product.PackageDescription), query) {
-						continue
-					}
-				}
-
-				if searchReq.MinPrice > 0 && product.PackagePrice < searchReq.MinPrice {
-					continue
-				}
-
-				if searchReq.MaxPrice > 0 && product.PackagePrice > searchReq.MaxPrice {
-					continue
-				}
-
-				if searchReq.PaymentMethod != "" {
-					hasPaymentMethod := false
-					for _, pm := range product.AvailablePaymentMethods {
-						if pm.PaymentMethod == searchReq.PaymentMethod {
-							hasPaymentMethod = true
-							break
-						}
-					}
-					if !hasPaymentMethod {
-						continue
-					}
-				}
-
-				filteredProducts = append(filteredProducts, product)
+		// Apply filters
+		if searchReq.Query != "" {
+			query := strings.ToLower(searchReq.Query)
+			if !strings.Contains(strings.ToLower(product.PackageName), query) &&
+				!strings.Contains(strings.ToLower(product.PackageDescription), query) {
+				continue
 			}
 		}
+
+		// Filter by price from new endpoint + 500
+		if searchReq.MaxPrice > 0 && product.PackagePrice > searchReq.MaxPrice {
+			continue
+		}
+		if searchReq.MinPrice > 0 && product.PackagePrice < searchReq.MinPrice {
+			continue
+		}
+
+		// Filter by payment method
+		if searchReq.PaymentMethod != "" {
+			hasPaymentMethod := false
+			for _, pm := range product.AvailablePaymentMethods {
+				if pm.PaymentMethod == searchReq.PaymentMethod {
+					hasPaymentMethod = true
+					break
+				}
+			}
+			if !hasPaymentMethod {
+				continue
+			}
+		}
+
+		filteredProducts = append(filteredProducts, product)
 	}
 
 	c.JSON(http.StatusOK, models.APIResponse{
